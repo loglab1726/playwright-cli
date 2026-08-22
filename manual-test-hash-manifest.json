@@ -1,5 +1,7 @@
 {
   "manual-tests/TC_AUTH_001_signup-form-toggle-from-login-page.md": "41009d5edd1c62039d1043820b1a506962bcabab7f8403b7aca7181275ed6aba",
+  "manual-tests/TC_AUTH_002_landing-signup-button-navigates-to-signup-form.md": "8f82220332d3a5f6fd3bd3c409158b041f3cf74f7b6c800e10ec940a84de99d0",
+  "manual-tests/TC_AUTH_003_recreate_signup-form-fields-present-and-correct.md": "91b889584d14487add7e793600a9675e0b632b01714fba43db000dbdce8a5a82",
   "manual-tests/TC_AUTH_004_successful-registration-redirects-to-home.md": "9a8ac8c40061f0b97d1242f9502018d34453fc98f805ef2da22c41bea5ef5f7d",
   "manual-tests/TC_CHECKOUT_017_paypal-form-submission-proceeds-to-success.md": "170bc87a202d32809f3ec98eab9a13c88a24810aaa3747ef491a96c10b7bc339",
   "manual-tests/TC_CHECKOUT_018_wishlisted-item-removed-after-purchase.md": "d80be91e2407ff0b22b6ec3deb60e2194970808462b005d34b6402f31aa3069c",

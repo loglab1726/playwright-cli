@@ -1,2 +1,4 @@
 Timestamp, Test Name, Failing Step/Locator, Error Summary
 2026-08-21T14:51:00+05:30, submits PayPal delivery form and reaches the success screen, PayPal success toast, Application reaches the success screen but does not expose "Order ORD-XXXXXX placed successfully!" for assertion
+2026-08-22T15:25:35.955Z, tests/authenticationTests.spec.ts, unknown (see error summary), Error: URL should redirect to home page
+2026-08-22T16:06:27.086Z, tests/authenticationTests.spec.ts, attempt-limit-exhausted, No further heal attempts permitted after 3 tries. See prior CSV rows and .healing-state/ for history.
