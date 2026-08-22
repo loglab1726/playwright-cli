@@ -44,7 +44,7 @@ docs/pipeline-plan.md              # Full pipeline design rationale
 
 - Every page object class must extend `BasePage` and implement `async init(): Promise<this>`.
 - Do **not** modify `BasePage.ts` unless adding a shared utility every page needs.
-- **Strict Environment Variables**: Use `process.env.TEST_USER_EMAIL` and `process.env.TEST_USER_PASSWORD` for credentials; never hardcode them.
+- **Strict Environment Variables**: Use `process.env.EMAIL_ADDRESS` and `process.env.PASSWORD` for credentials (see `tests/auth.setup.ts`); never hardcode them.
 - Never call `expect()` inside a page object — return raw values or other Page Objects only.
 - **Complete Method Chaining & Resumption**: 
   - Always use the `open` fixture to start a chain.

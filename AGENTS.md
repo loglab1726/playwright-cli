@@ -50,8 +50,8 @@ docs/pipeline-plan.md              # Full design rationale for the pipeline (thi
   documented in the `pom-conventions` skill
   (`.github/skills/pom-conventions/SKILL.md`) — read that before generating
   or healing any locator.
-- Credentials come only from `process.env.TEST_USER_EMAIL` /
-  `process.env.TEST_USER_PASSWORD`. Never hardcode credentials.
+- Credentials come only from `process.env.EMAIL_ADDRESS` /
+  `process.env.PASSWORD` (see `tests/auth.setup.ts`). Never hardcode credentials.
 - Auth is applied globally via `storageState` in `playwright.config.ts`. Don't
   override it per-test unless the test must run unauthenticated.
 - Tests carry tags (`@ui`, `@smoke`, and a domain tag like `@checkout`) — see

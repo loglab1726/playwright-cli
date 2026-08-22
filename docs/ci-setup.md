@@ -3,6 +3,42 @@
 This repo's `.github/workflows/manual-test-pipeline.yml` invokes the `copilot`
 CLI headlessly. Before turning it on:
 
+## 0. Free-tier budget (read this first if you're on Copilot Free)
+
+GitHub moved Copilot billing from a flat request counter to usage-based **AI
+Credits** on 2026-06-01. Chat, agent mode, code review, and **Copilot CLI**
+all draw from this same credit pool — code completions are the only thing
+that stays unmetered. This matters a lot for this pipeline specifically:
+
+- **Agentic sessions are expensive.** A single agent session doing real work
+  on a capable model has been reported to run several hundred credits
+  ($3-12+ equivalent) in one interaction. Every `copilot -p ...` invocation in
+  the `generate-and-run` job — one per manual-tests file, with up to 3 heal
+  attempts happening *inside* that single invocation — is exactly this kind
+  of session.
+- **There's no default spending cap.** Once your included credits are used
+  up, Copilot keeps working and bills overage until you manually set a limit.
+  **Before running this pipeline even once**, go to
+  **Settings → Billing → GitHub Copilot → Set spending limit** and set it to
+  **$0** if you want a hard stop instead of a surprise bill. This control was
+  only added 2026-07-02 — don't assume it's already on.
+- **Check your actual current allowance** at
+  `github.com/settings/billing` rather than trusting any specific number
+  written here or in older articles — the exact Free-tier figure is
+  genuinely unclear from current public sources and may have changed again
+  since this was written.
+- **The workflow defaults are deliberately conservative as a result:**
+  `workflow_dispatch.max_files` caps a manual run to 1 file by default, and
+  `generate-and-run`'s `max-parallel` is set to `1`. Run one manual-tests
+  file, check the actual credit cost at the billing URL above, and only then
+  consider raising either number. Don't push a multi-file commit to
+  `manual-tests/` (which triggers the pipeline automatically) until you've
+  done that one-file test run via `workflow_dispatch`.
+- The `--max-ai-credits=40` value in the `copilot -p` invocation itself is
+  carried over from the original design and was never validated against
+  post-2026-06-01 real costs — treat it as a starting guess, not a
+  known-safe number.
+
 ## 1. Copilot CLI auth token
 
 Add a repo (or org) secret named `COPILOT_GITHUB_TOKEN`. The workflow reads it
@@ -16,6 +52,35 @@ been changing quickly):
 - Fine-grained PAT (v2) with the **"Copilot Requests"** permission, OR an
   OAuth token from the Copilot CLI app / `gh` CLI app.
 - Classic PATs (`ghp_...`) are **not** supported — don't use one here.
+
+## 1.5 App-under-test secrets (required — tests fail without these)
+
+`playwright.config.ts` and `tests/fixtures.ts` load these via `dotenv` from a
+local `.env` file for local runs, but **no `.env` file exists in CI** — the
+`generate-and-run` job wires them in as repo secrets instead. Without these
+set, every generated test fails immediately on a missing baseURL or
+credential, which looks like the agent generated a broken test but isn't.
+
+Add these as repo secrets (Settings → Secrets and variables → Actions → New
+repository secret):
+
+| Secret name | Used for | Read by |
+|---|---|---|
+| `BASE_URL` | The app-under-test URL, e.g. `https://sedigaplanit.github.io/AI-R-D---Github-copilot/` | `playwright.config.ts`, `tests/auth.setup.ts` |
+| `APP_URL` | Base URL for the `apiContext` fixture (pre-authenticated API calls) — may be the same value as `BASE_URL` if there's no separate API host | `tests/fixtures.ts` |
+| `EMAIL_ADDRESS` | Login email for the test account | `tests/auth.setup.ts` |
+| `PASSWORD` | Login password for the test account | `tests/auth.setup.ts` |
+
+**Note on naming:** `.github/copilot-instructions.md` and `AGENTS.md`
+previously documented these as `TEST_USER_EMAIL`/`TEST_USER_PASSWORD`. That
+was wrong — the actual code in `tests/auth.setup.ts` reads `EMAIL_ADDRESS`
+and `PASSWORD`. Both docs have been corrected to match the code; use the
+names in the table above, not the old doc names if you see them referenced
+anywhere else (e.g. commit history, chat logs).
+
+`.env.example` has also been corrected — it previously listed only
+`AMPLIFY_*` variables left over from the removed OpenCode/Amplify adapter,
+none of which the current code reads at all.
 
 ## 2. `gh` CLI auth for the finalize job
 
@@ -38,5 +103,18 @@ that job will need a PAT with `pull-requests: write` instead — swap the
 - Current `--max-ai-credits` cost-per-model figures, to sanity check the `40`
   used in the workflow is a sane ceiling and not either wasteful or too tight
   to let a real 3-attempt heal loop complete.
+
+## 4. Pre-existing gap found in `.github/workflows/playwright.yml` (not fixed — flagged only)
+
+This file predates the pipeline work and `docs/pipeline-plan.md` explicitly
+says to keep it unchanged as the independent validation gate. While wiring
+the new workflow's secrets, the same gap was found here too: it runs
+`npx playwright test` on every push/PR but never sets `BASE_URL`, `APP_URL`,
+`EMAIL_ADDRESS`, or `PASSWORD` — the same four secrets from Section 1.5
+above. If this workflow has been passing, either the app-under-test tolerates
+a missing baseURL, or this workflow hasn't actually been exercising real
+authenticated flows. Worth checking directly before trusting it as "the real
+gate" per the pipeline design — add the same four secrets to this workflow's
+`env:` if you confirm it needs them.
 
 See `docs/pipeline-plan.md` Section 9 for the full list this was drawn from.

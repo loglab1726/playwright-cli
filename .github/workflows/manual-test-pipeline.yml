@@ -17,7 +17,19 @@ on:
     branches: [main, master]
     paths:
       - 'manual-tests/**.md'
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      max_files:
+        description: >
+          Max manual-tests files to dispatch in this run. Copilot CLI now bills
+          against a per-account AI-credit allowance rather than a simple
+          request counter (see docs/ci-setup.md, "Free-tier budget"), and a
+          single agentic generate+heal session can consume a large share of a
+          Free-tier allowance. Default is deliberately conservative (1) —
+          raise it only after confirming actual per-file credit cost against
+          your account's real allowance at github.com/settings/billing.
+        required: false
+        default: '1'
 
 jobs:
   dedup:
@@ -34,9 +46,34 @@ jobs:
 
       - name: Compute changed manual-tests files (content hash vs. committed manifest)
         id: compute
+        env:
+          MAX_FILES: ${{ github.event.inputs.max_files || '1' }}
         run: |
           CHANGED=$(node scripts/compute-manual-test-hashes.js check)
           echo "Changed files: $CHANGED"
+
+          TOTAL_CHANGED=$(echo "$CHANGED" | node -e "
+            let d='';process.stdin.on('data',c=>d+=c);
+            process.stdin.on('end',()=>{console.log(JSON.parse(d).length)});
+          ")
+
+          # Cap the batch. This is a deliberate safety guard, not a
+          # convenience feature: on a Free-tier / low-allowance Copilot
+          # account, dispatching every changed file in one push could exhaust
+          # a month's AI-credit allowance (or trigger billed overage if no
+          # spending limit is set) in a single CI run. See docs/ci-setup.md.
+          CHANGED=$(echo "$CHANGED" | node -e "
+            let d='';process.stdin.on('data',c=>d+=c);
+            process.stdin.on('end',()=>{
+              const files = JSON.parse(d).slice(0, ${MAX_FILES});
+              console.log(JSON.stringify(files));
+            });
+          ")
+
+          if [ "$TOTAL_CHANGED" -gt "$MAX_FILES" ]; then
+            echo "::warning::${TOTAL_CHANGED} manual-tests files changed, but max_files=${MAX_FILES} — only dispatching the first ${MAX_FILES}. Remaining files stay flagged as changed (manifest untouched for them) and will be picked up on the next run. Re-run with a higher max_files input once you've confirmed real per-file credit cost."
+          fi
+
           COUNT=$(echo "$CHANGED" | node -e "
             let d='';process.stdin.on('data',c=>d+=c);
             process.stdin.on('end',()=>{const arr=JSON.parse(d);console.log(arr.length)});
@@ -60,19 +97,31 @@ jobs:
     if: needs.dedup.outputs.has_changes == 'true'
     runs-on: ubuntu-latest
     strategy:
-      # Cap fan-out deliberately: each `copilot -p` call is a metered Copilot
-      # session (plan request allowance), not raw API tokens. A single commit
-      # adding 10 manual-test files should not fan out to 10 fully-parallel
-      # sessions each burning up to 3 heal attempts. Tune based on observed
-      # cost (docs/pipeline-plan.md Section 7, "Why the matrix/concurrency
-      # limit matters").
-      max-parallel: 3
+      # Cap fan-out deliberately: each `copilot -p` call is a metered,
+      # usage-based Copilot session (AI credits, not a simple request count —
+      # see docs/ci-setup.md "Free-tier budget"). A single agentic
+      # generate+heal session can consume a large share of a low-allowance
+      # account's monthly credits. Combined with the max_files cap on the
+      # dedup job, max-parallel: 1 means you see exactly one file's real
+      # credit cost before ever running two at once. Raise both once you've
+      # confirmed actual cost against your account's allowance at
+      # github.com/settings/billing.
+      max-parallel: 1
       fail-fast: false
       matrix: ${{ fromJson(needs.dedup.outputs.matrix) }}
     outputs: {}
     env:
       COPILOT_OTEL_ENABLED: 'true'
       COPILOT_OTEL_FILE_EXPORTER_PATH: ${{ github.workspace }}/otel-trace-${{ strategy.job-index }}.jsonl
+      # App-under-test config. playwright.config.ts loads these via dotenv
+      # from a local .env file for local runs, but no .env file exists in CI
+      # — these MUST come from repo secrets or every generated test fails on
+      # a missing baseURL/credential, which looks like a real bug but isn't.
+      # See docs/ci-setup.md, "Repo secrets" for the full list.
+      BASE_URL: ${{ secrets.BASE_URL }}
+      APP_URL: ${{ secrets.APP_URL }}
+      EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
+      PASSWORD: ${{ secrets.PASSWORD }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -103,6 +152,16 @@ jobs:
       # NOTE: `copilot` CLI auth is expected via COPILOT_GITHUB_TOKEN / GH_TOKEN
       # / GITHUB_TOKEN precedence (docs/pipeline-plan.md Section 3 and Section 9
       # item 2). Wire the actual secret name used by your org below.
+      #
+      # NOTE on --max-ai-credits=40: GitHub moved Copilot billing from a flat
+      # request counter to usage-based AI Credits on 2026-06-01. This "40" was
+      # never validated against real post-change costs — a single agentic
+      # session on a capable model can run into the hundreds of credits. On a
+      # Free-tier account this cap may be close to (or exceed) your entire
+      # allowance for a session, or may be too small to let one full 3-attempt
+      # heal cycle finish. Run one file, check actual credit spend at
+      # github.com/settings/billing, then tune this number — don't trust it
+      # as-is. See docs/ci-setup.md, "Free-tier budget".
       - name: Generate, execute, and bounded-heal via Copilot CLI
         id: copilot_run
         env:
