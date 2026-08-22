@@ -100,4 +100,30 @@ export class AuthenticationPage extends BasePage {
   public async isSignUpFormVisible(): Promise<boolean> {
     return (await this.page.getByRole('textbox', { name: 'Your Name' }).count()) > 0;
   }
+
+  public async getPlaceholderForField(name: string): Promise<string> {
+    return this.page.getByRole('textbox', { name, exact: true }).getAttribute('placeholder')
+      .then((v) => v?.trim() ?? '');
+  }
+
+  public async getGenderOptions(): Promise<string[]> {
+    return this.page.getByRole('combobox').locator('option').allTextContents()
+      .then((arr) => arr.map((s) => s.trim()));
+  }
+
+  public async isSignUpButtonEnabled(): Promise<boolean> {
+    const btn = this.page.getByRole('button', { name: 'Sign Up', exact: true });
+    return btn.isEnabled();
+  }
+
+  public async isSignUpButtonLoading(): Promise<boolean> {
+    const btn = this.page.getByRole('button', { name: 'Sign Up', exact: true });
+    const ariaBusy = await btn.getAttribute('aria-busy');
+    if (ariaBusy === 'true') return true;
+    try {
+      return await btn.evaluate((el) => (el as HTMLElement).classList.contains('loading'));
+    } catch {
+      return false;
+    }
+  }
 }

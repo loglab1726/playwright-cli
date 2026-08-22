@@ -174,4 +174,74 @@ test.describe('Authentication', { tag: ['@ui', '@auth'] }, () => {
       message: 'Already have an account paragraph should be visible',
     }).toBe(true);
   });
+
+  test('Sign Up form fields present and correct', async ({ open }) => {
+    const authPage = await open(AuthenticationPage).then((_) => _.ensureSignUpForm());
+
+    await expect.poll(() => authPage.getHeadingText(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Heading should read "Sign Up"',
+    }).toBe('Sign Up');
+
+    await expect.poll(() => authPage.getPlaceholderForField('Your Name'), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Name field placeholder should be "Your Name"',
+    }).toBe('Your Name');
+
+    await expect.poll(() => authPage.getPlaceholderForField('Email Address'), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Email field placeholder should be "Email Address"',
+    }).toBe('Email Address');
+
+    await expect.poll(() => authPage.getPlaceholderForField('Mobile Number'), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Mobile Number placeholder should be "Mobile Number"',
+    }).toBe('Mobile Number');
+
+    await expect.poll(() => authPage.getPlaceholderForField('Password'), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Password placeholder should be "Password"',
+    }).toBe('Password');
+
+    await expect.poll(() => authPage.getPlaceholderForField('Confirm Password'), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Confirm Password placeholder should be "Confirm Password"',
+    }).toBe('Confirm Password');
+
+    await expect.poll(() => authPage.getPlaceholderForField('Address (optional)'), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Address placeholder should be "Address (optional)"',
+    }).toBe('Address (optional)');
+
+    await expect.poll(() => authPage.getSelectedGender(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Default gender should be "Select Gender"',
+    }).toBe('Select Gender');
+
+    await expect.poll(() => authPage.getGenderOptions(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Gender options should be present and correct',
+    }).toEqual(['Select Gender', 'Male', 'Female', 'Other', 'Prefer not to say']);
+
+    await expect.poll(() => authPage.isSignUpButtonEnabled(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Sign Up button should be enabled',
+    }).toBe(true);
+
+    await expect.poll(() => authPage.isSignUpButtonLoading(), {
+      timeout: 3000,
+      intervals: [250, 500],
+      message: 'Sign Up button should not be in loading state',
+    }).toBe(false);
+  });
 });
