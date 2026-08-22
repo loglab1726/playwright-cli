@@ -177,4 +177,53 @@ corresponding PR appearing, check the job's own logs for the "Commit and
 push generated changes" step first — that's the step whose failure would
 reproduce this exact symptom.
 
+## 6. Serious issue found and fixed: `--allow-tool` could never scope to `scripts/bounded-run.js`, so the agent never actually ran it
+
+`copilot help permissions` documents that shell permission matching happens
+on the **stem** of the command, and that multi-token matching (e.g. `git
+push`, `gh pr create`) is special-cased specifically for `git`/`gh`. Confirmed
+by direct testing (both locally and reproduced in a live `generate-and-run`
+job): `--allow-tool 'shell(node scripts/bounded-run.js:*)'` **never matches**
+an actual `node scripts/bounded-run.js <spec>` invocation — only the bare
+executable name (`node`) is recognized as the stem for a generic command, so
+every single attempt was silently denied with "Permission denied and could
+not request permission from user."
+
+**Impact — worse than it sounds:** since `--no-ask-user` is set, the agent
+can't fall back to asking for permission; it just gives up on running the
+wrapper and writes up its own analysis as a final answer instead (e.g. "test
+already covered, no changes needed"). The workflow's `outcome: success`
+determination only checks the Copilot process's exit code and whether
+`unresolved-test-failures.csv` grew — neither of those catches this, because
+the agent still exits cleanly. **Every "successful" run so far — including
+the one that produced PR #1 — never actually executed
+`scripts/bounded-run.js` at all.** The "MANDATORY EXECUTION" requirement in
+`.github/copilot-instructions.md` / `AGENTS.md` (generation is never complete
+until the test has actually been run) was silently unenforced the whole time.
+
+Fixed by broadening the allow pattern to `shell(node:*)` in both
+`manual-test-pipeline.yml` and `scripts/run-manual-test-locally.sh` — the
+narrowest pattern that actually works, confirmed by testing the same command
+against both patterns side by side.
+
+**This does weaken the Section 4 Layer B guarantee.** The explicit denies for
+`shell(npx playwright test:*)` and `shell(npm test:*)` still block those two
+specific bypass commands, but `shell(node:*)` now also allows *any other*
+`node ...` invocation — e.g. the agent could still reach Playwright some
+other way (calling its JS API directly from a one-off script, or
+`node ./node_modules/.bin/playwright`) without going through the wrapper.
+Layer A (`scripts/bounded-run.js`'s own durable, on-disk attempt counter)
+remains the real enforcement; Layer B is now a partial mitigation relying on
+the agent's instructions, not a structural guarantee, until Copilot CLI
+supports finer-grained shell permission matching (see `docs/pipeline-plan.md`
+Section 9, item 5, which flagged a related but distinct uncertainty about
+this permission system before this specific limitation was confirmed).
+
+**A prior, incorrect diagnosis:** an earlier fix attempt added a
+backslash-path variant of the allow pattern (`shell(node scripts\bounded-run.js:*)`)
+to `scripts/run-manual-test-locally.sh`, guessing the cause was a Windows
+path-separator mismatch. It wasn't — the same failure reproduced identically
+on Linux CI with the forward-slash-only pattern, which is what led to finding
+the real cause above.
+
 See `docs/pipeline-plan.md` Section 9 for the full list this was drawn from.

@@ -215,6 +215,24 @@ jobs:
       # heal cycle finish. Run one file, check actual credit spend at
       # github.com/settings/billing, then tune this number — don't trust it
       # as-is. See docs/ci-setup.md, "Free-tier budget".
+      #
+      # NOTE on --allow-tool 'shell(node:*)': `copilot help permissions` states
+      # wildcard matching happens "on the stem of the command," with multi-token
+      # matching (e.g. "git push") special-cased for git/gh only. Confirmed by
+      # direct testing that a generic multi-token pattern like
+      # 'shell(node scripts/bounded-run.js:*)' NEVER matches — only the bare
+      # executable name is recognized as the stem — so it silently denied every
+      # invocation instead of scoping to just the wrapper script as Section 4's
+      # Layer B design intended. 'shell(node:*)' is the narrowest pattern that
+      # actually works, which means Layer B's guarantee is now weaker than
+      # originally designed: it explicitly blocks `npx playwright test` and
+      # `npm test`, but does NOT prevent the agent from running Playwright some
+      # other way via a plain `node ...` invocation (e.g. calling its JS API
+      # directly, or `node ./node_modules/.bin/playwright`). Layer A
+      # (scripts/bounded-run.js's own durable, on-disk attempt counter) remains
+      # the real enforcement; Layer B is now a partial mitigation, not a
+      # structural guarantee, until Copilot CLI supports finer-grained shell
+      # permission matching. See docs/ci-setup.md.
       - name: Generate, execute, and bounded-heal via Copilot CLI
         id: copilot_run
         env:
@@ -223,7 +241,7 @@ jobs:
           set +e
           copilot -p "Generate, execute, and bounded-heal a Playwright test for ${{ matrix.file }}. Follow .github/copilot-instructions.md, AGENTS.md, and the pom-conventions + playwright-cli skills exactly. Run tests ONLY via node scripts/bounded-run.js <spec> — never call npx playwright test or npm test directly. Do not run any git commands — the CI workflow commits and pushes your changes after you finish; you only need to write/edit files on disk." \
             --agent playwright-test-generator \
-            --allow-tool 'shell(node scripts/bounded-run.js:*)' \
+            --allow-tool 'shell(node:*)' \
             --deny-tool 'shell(git add:*)' \
             --deny-tool 'shell(git commit:*)' \
             --deny-tool 'shell(git push:*)' \
