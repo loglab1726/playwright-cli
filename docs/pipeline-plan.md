@@ -327,3 +327,26 @@ Documented honestly so nothing here is silently assumed:
 - **Not** relying on `--allow-all-tools` even though GitHub's own docs suggest it for programmatic use — deliberately using scoped `--allow-tool`/`--deny-tool` instead, because the deny-list is the structural enforcement mechanism this whole design depends on (Section 4).
 - **Not** trusting the agent's self-reported `[HEAL ATTEMPT X/3]` text as the actual cap — that text can remain as a human-readable log line, but it is not what enforces the limit anymore (Section 4).
 - **Not** burning heal attempts on failures that look like real app bugs or stale manual-test expectations rather than locator drift (Section 5).
+
+---
+
+## 12. Phase 2 candidates (deferred, not yet implemented)
+
+Deliberately deferred rather than rejected — worth revisiting once the core
+pipeline (Sections 1–11) is proven reliable end-to-end. Both target the same
+goal: reduce redundant file reads/re-exploration across separate `copilot -p`
+sessions, cutting token/credit consumption and improving throughput.
+
+- **A hand-maintained project index** (e.g. `docs/pom-index.md`) listing every
+  Page Object's public methods and which manual-test IDs each existing spec
+  already covers, with `copilot-instructions.md`/`AGENTS.md` updated to say
+  "check this index before reading full source files." Deterministic and
+  auditable; main risk is drift if not kept in sync as Page Objects/tests
+  change.
+- **Copilot CLI's built-in `--enable-memory` flag** (cross-session fact
+  recall, off by default in `-p` mode), backed by a `$COPILOT_HOME` directory
+  (`~/.copilot` by default) that could be pointed at a path cached across CI
+  runs via `actions/cache`. Riskier: it's an opaque, undocumented internal
+  store (SQLite-backed), and caching mutable state across ephemeral runners
+  carries staleness/corruption risk for unclear payoff — would need real
+  testing to confirm it actually reduces re-reads before relying on it.

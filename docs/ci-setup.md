@@ -201,23 +201,37 @@ the one that produced PR #1 — never actually executed
 `.github/copilot-instructions.md` / `AGENTS.md` (generation is never complete
 until the test has actually been run) was silently unenforced the whole time.
 
-Fixed by broadening the allow pattern to `shell(node:*)` in both
-`manual-test-pipeline.yml` and `scripts/run-manual-test-locally.sh` — the
-narrowest pattern that actually works, confirmed by testing the same command
-against both patterns side by side.
+First fix attempt: broadened the allow pattern to `shell(node:*)`. That
+unblocked `bounded-run.js`, but the same underlying limitation immediately
+resurfaced for other commands the agent needed mid-session (`cd`, `echo`,
+`mkdir`, ...) — none of those are `node`, so they hit the identical
+"Permission denied" wall. Whack-a-moling individual command stems doesn't
+scale: the agent routinely reaches for small shell utilities during
+exploration, and there's no way to predict which one it'll need next.
 
-**This does weaken the Section 4 Layer B guarantee.** The explicit denies for
-`shell(npx playwright test:*)` and `shell(npm test:*)` still block those two
-specific bypass commands, but `shell(node:*)` now also allows *any other*
-`node ...` invocation — e.g. the agent could still reach Playwright some
-other way (calling its JS API directly from a one-off script, or
-`node ./node_modules/.bin/playwright`) without going through the wrapper.
-Layer A (`scripts/bounded-run.js`'s own durable, on-disk attempt counter)
-remains the real enforcement; Layer B is now a partial mitigation relying on
-the agent's instructions, not a structural guarantee, until Copilot CLI
-supports finer-grained shell permission matching (see `docs/pipeline-plan.md`
-Section 9, item 5, which flagged a related but distinct uncertainty about
-this permission system before this specific limitation was confirmed).
+**Final fix — broadened to a bare `shell` allow (no command restriction at
+all).** Before relying on this, confirmed by direct testing that the explicit
+denies still take effect correctly under a blanket allow: `npx playwright
+test`, `npm test`, `git add`, `git commit`, and `git push` were all still
+denied, each citing the specific deny rule that caught it. Denial genuinely
+overrides allow, exactly as documented — so `shell` + the existing
+`--deny-tool` list is not a weaker version of the intended boundary, it's
+just an accurate description of what the boundary actually is and always
+was: those five things are blocked, everything else runs freely (subject to
+the CLI's own default path restriction — working directory + subdirectories
++ temp dir only).
+
+**This does weaken the Section 4 Layer B guarantee** relative to what was
+originally designed (only `scripts/bounded-run.js` runs, nothing else). The
+agent could still reach Playwright some other way that isn't one of the five
+denied commands — e.g. calling its JS API directly from a one-off script, or
+`node ./node_modules/.bin/playwright`. Layer A (`scripts/bounded-run.js`'s
+own durable, on-disk attempt counter) remains the real enforcement; Layer B
+is now a partial mitigation relying on the agent's instructions plus the five
+explicit denies, not a structural guarantee, until Copilot CLI supports
+finer-grained shell permission matching (see `docs/pipeline-plan.md` Section
+9, item 5, which flagged a related but distinct uncertainty about this
+permission system before this specific limitation was confirmed).
 
 **A prior, incorrect diagnosis:** an earlier fix attempt added a
 backslash-path variant of the allow pattern (`shell(node scripts\bounded-run.js:*)`)
@@ -260,5 +274,41 @@ processes up to 10 changed files per run instead of exactly one. Tune the
 budget" guidance) — it's a batch-size cap, not a concurrency cap;
 `generate-and-run`'s `max-parallel: 1` still means those files run one at a
 time within that batch.
+
+## 8. Serious issue found and fixed: the agent could never actually write generated code
+
+Separate from Section 6's `shell(...)` finding: `copilot help permissions`
+documents `write(path?)` as its own permission kind — "matches tools that
+create and modify files, **except shell tool invocations**." Neither
+`manual-test-pipeline.yml` nor `scripts/run-manual-test-locally.sh` ever
+granted it, so every attempt to write a Page Object or spec file was silently
+denied. Observed directly on a real `TC_AUTH_002` run: the agent's built-in
+`edit` tool call failed, and it then burned most of a session's AI-credit
+budget (30 of 40 credits, per that run's own report) improvising shell-based
+workarounds — `cat > file`, `tee file`, `sed -i`, even `touch` to test
+write access, and `git checkout` to try reverting first — **every single
+one** denied identically, since none of them matched the narrow
+`shell(node:*)` allow in place at the time (see Section 6 — since further
+broadened to a bare `shell` allow), and `write` itself was never granted at
+all.
+
+Confirmed by direct local testing: a bare `--allow-tool 'write'` (no path
+scoping) is what actually unblocks file writes — verified against a scratch
+file before applying it here. Fixed by adding it alongside the `shell` allow
+(Section 6) in both files. This grant is broad (not scoped to
+`pages/`/`tests/`), which is
+unavoidable given generating those files is this agent's entire purpose;
+it's still bounded by the CLI's own default path restriction (working
+directory + subdirectories + system temp dir only — see the "Path
+Permissions" section of `copilot help permissions`), and nothing it writes
+reaches `main` without a human merging the resulting PR.
+
+**Combined with Section 6:** every run before both of these fixes landed
+either silently skipped real test execution (`bounded-run.js` denied) or
+silently skipped real code generation (`write` denied) — meaning no run of
+this pipeline had ever done its actual job end-to-end until now. If a future
+run reports success suspiciously fast with no `pages/`/`tests/` diff for a
+manual test that clearly needs new coverage, check its log for repeated
+"Permission denied" lines before trusting the result.
 
 See `docs/pipeline-plan.md` Section 9 for the full list this was drawn from.

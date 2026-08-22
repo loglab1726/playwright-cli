@@ -230,23 +230,43 @@ jobs:
       # github.com/settings/billing, then tune this number — don't trust it
       # as-is. See docs/ci-setup.md, "Free-tier budget".
       #
-      # NOTE on --allow-tool 'shell(node:*)': `copilot help permissions` states
-      # wildcard matching happens "on the stem of the command," with multi-token
-      # matching (e.g. "git push") special-cased for git/gh only. Confirmed by
-      # direct testing that a generic multi-token pattern like
-      # 'shell(node scripts/bounded-run.js:*)' NEVER matches — only the bare
-      # executable name is recognized as the stem — so it silently denied every
-      # invocation instead of scoping to just the wrapper script as Section 4's
-      # Layer B design intended. 'shell(node:*)' is the narrowest pattern that
-      # actually works, which means Layer B's guarantee is now weaker than
-      # originally designed: it explicitly blocks `npx playwright test` and
-      # `npm test`, but does NOT prevent the agent from running Playwright some
-      # other way via a plain `node ...` invocation (e.g. calling its JS API
-      # directly, or `node ./node_modules/.bin/playwright`). Layer A
-      # (scripts/bounded-run.js's own durable, on-disk attempt counter) remains
-      # the real enforcement; Layer B is now a partial mitigation, not a
-      # structural guarantee, until Copilot CLI supports finer-grained shell
-      # permission matching. See docs/ci-setup.md.
+      # NOTE on --allow-tool 'shell' (bare, allows all shell commands):
+      # `copilot help permissions` states wildcard matching happens "on the
+      # stem of the command," with multi-token matching (e.g. "git push")
+      # special-cased for git/gh only. Confirmed by direct testing that a
+      # narrower multi-token pattern like 'shell(node scripts/bounded-run.js:*)'
+      # NEVER matches — only the bare executable name is recognized as the
+      # stem — and that whack-a-moling individual command stems (node, then
+      # cd/echo/mkdir next, ...) doesn't scale: the agent routinely needs
+      # arbitrary small shell utilities during exploration. Also confirmed by
+      # direct testing: the explicit --deny-tool entries below (npx playwright
+      # test, npm test, git add/commit/push) still take effect correctly even
+      # under a bare 'shell' allow — denial genuinely overrides allow, as
+      # documented. So Layer B's real guarantee is exactly what's explicitly
+      # denied below, not "only bounded-run.js can run" as originally
+      # designed — the agent could still reach Playwright some other way (its
+      # JS API directly, or `node ./node_modules/.bin/playwright`) without
+      # going through the wrapper. Layer A (scripts/bounded-run.js's own
+      # durable, on-disk attempt counter) remains the real enforcement; Layer
+      # B is a partial mitigation, not a structural guarantee, until Copilot
+      # CLI supports finer-grained shell permission matching. See
+      # docs/ci-setup.md.
+      #
+      # NOTE on --allow-tool 'write': the built-in file-edit/create tool is a
+      # SEPARATE permission kind from `shell(...)` (per `copilot help
+      # permissions`: "write(path?) — matches tools that create and modify
+      # files, except shell tool invocations"). Without an explicit grant for
+      # it, every file write the agent attempted was silently denied —
+      # including shell-based workarounds (`cat >`, `tee`, `sed -i`, even
+      # `touch`) once it started improvising after the real `edit` tool call
+      # failed, burning most of a session's AI-credit budget on retries that
+      # could never succeed. Confirmed by direct local testing that bare
+      # `write` (no path scoping) is required — this is unavoidable since
+      # writing Page Objects/spec files is this agent's entire purpose. Still
+      # scoped to the CLI's own default path restriction (working directory +
+      # subdirectories + temp dir only, per the same help output), and
+      # nothing this writes reaches `main` without the human-reviewed PR from
+      # `finalize` being merged. See docs/ci-setup.md.
       - name: Generate, execute, and bounded-heal via Copilot CLI
         id: copilot_run
         env:
@@ -255,7 +275,8 @@ jobs:
           set +e
           copilot -p "Generate, execute, and bounded-heal a Playwright test for ${{ matrix.file }}. Follow .github/copilot-instructions.md, AGENTS.md, and the pom-conventions + playwright-cli skills exactly. Run tests ONLY via node scripts/bounded-run.js <spec> — never call npx playwright test or npm test directly. Do not run any git commands — the CI workflow commits and pushes your changes after you finish; you only need to write/edit files on disk." \
             --agent playwright-test-generator \
-            --allow-tool 'shell(node:*)' \
+            --allow-tool 'shell' \
+            --allow-tool 'write' \
             --deny-tool 'shell(git add:*)' \
             --deny-tool 'shell(git commit:*)' \
             --deny-tool 'shell(git push:*)' \
