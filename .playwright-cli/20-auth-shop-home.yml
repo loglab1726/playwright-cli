@@ -1,0 +1,281 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - link [ref=e5] [cursor=pointer]:
+      - /url: /AI-R-D---Github-copilot
+      - img "OneStyle Logo" [ref=e6]
+      - paragraph [ref=e7]: OneStyle
+    - list [ref=e9]:
+      - listitem [ref=e10] [cursor=pointer]:
+        - link "Shop" [active] [ref=e11]:
+          - /url: /AI-R-D---Github-copilot
+        - separator [ref=e12]
+      - listitem [ref=e13] [cursor=pointer]:
+        - link "Men" [ref=e14]:
+          - /url: /AI-R-D---Github-copilot/mens
+      - listitem [ref=e15] [cursor=pointer]:
+        - link "Women" [ref=e16]:
+          - /url: /AI-R-D---Github-copilot/womens
+      - listitem [ref=e17] [cursor=pointer]:
+        - link "Kids" [ref=e18]:
+          - /url: /AI-R-D---Github-copilot/kids
+    - generic [ref=e19]:
+      - link [ref=e400] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/profile
+        - button "Profile" [ref=e401]
+      - link [ref=e402] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/orders
+        - button "My Orders" [ref=e403]
+      - button "Logout" [ref=e404] [cursor=pointer]
+      - link "♡" [ref=e22] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/wishlist
+      - link [ref=e24] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/cart
+        - img "Cart Icon" [ref=e25]
+      - generic [ref=e26]: "0"
+  - generic [ref=e472]:
+    - generic [ref=e473]:
+      - generic [ref=e474]:
+        - heading "Welcome to Our Store" [level=2] [ref=e475]
+        - heading "Discover New Collections" [level=1] [ref=e476]
+        - paragraph [ref=e477]: Explore the latest trends designed for everyone.
+        - generic [ref=e478]:
+          - button "Shop Now" [ref=e479] [cursor=pointer]
+          - button [ref=e480] [cursor=pointer]:
+            - text: Learn More
+            - img "arrow icon" [ref=e481]
+        - generic [ref=e482]:
+          - generic [ref=e483]:
+            - img "feature icon" [ref=e484]
+            - paragraph [ref=e485]: Free Shipping
+          - generic [ref=e486]:
+            - img "feature icon" [ref=e487]
+            - paragraph [ref=e488]: Easy Returns
+          - generic [ref=e489]:
+            - img "feature icon" [ref=e490]
+            - paragraph [ref=e491]: Secure Payment
+      - img "Hero" [ref=e493]
+    - generic [ref=e494]:
+      - heading "POPULAR IN WOMEN" [level=1] [ref=e495]
+      - separator [ref=e496]
+      - generic [ref=e497]:
+        - generic [ref=e498]:
+          - generic [ref=e499]:
+            - link [ref=e500] [cursor=pointer]:
+              - /url: /AI-R-D---Github-copilot/product/1
+            - button "♡" [ref=e501] [cursor=pointer]
+          - paragraph [ref=e502]: Casual Striped Blouse with Peplum Hem
+          - generic [ref=e503]:
+            - generic [ref=e504]: LKR 50.00
+            - generic [ref=e505]: LKR 80.50
+          - generic [ref=e506]:
+            - button "S" [ref=e507] [cursor=pointer]
+            - button "M" [ref=e508] [cursor=pointer]
+            - button "L" [ref=e509] [cursor=pointer]
+            - button "XL" [ref=e510] [cursor=pointer]
+            - button "XXL" [ref=e511] [cursor=pointer]
+          - button "Add to Cart" [ref=e513] [cursor=pointer]
+        - generic [ref=e514]:
+          - generic [ref=e515]:
+            - link [ref=e516] [cursor=pointer]:
+              - /url: /AI-R-D---Github-copilot/product/2
+            - button "♡" [ref=e517] [cursor=pointer]
+          - paragraph [ref=e518]: Elegant Overlap Collar Top
+          - generic [ref=e519]:
+            - generic [ref=e520]: LKR 85.00
+            - generic [ref=e521]: LKR 120.50
+          - generic [ref=e522]:
+            - button "S" [ref=e523] [cursor=pointer]
+            - button "M" [ref=e524] [cursor=pointer]
+            - button "L" [ref=e525] [cursor=pointer]
+            - button "XL" [ref=e526] [cursor=pointer]
+            - button "XXL" [ref=e527] [cursor=pointer]
+          - button "Add to Cart" [ref=e529] [cursor=pointer]
+        - generic [ref=e530]:
+          - generic [ref=e531]:
+            - link [ref=e532] [cursor=pointer]:
+              - /url: /AI-R-D---Github-copilot/product/3
+            - button "♡" [ref=e533] [cursor=pointer]
+          - paragraph [ref=e534]: Striped Summer Flutter Blouse
+          - generic [ref=e535]:
+            - generic [ref=e536]: LKR 60.00
+            - generic [ref=e537]: LKR 100.50
+          - generic [ref=e538]:
+            - button "S" [ref=e539] [cursor=pointer]
+            - button "M" [ref=e540] [cursor=pointer]
+            - button "L" [ref=e541] [cursor=pointer]
+            - button "XL" [ref=e542] [cursor=pointer]
+            - button "XXL" [ref=e543] [cursor=pointer]
+          - button "Add to Cart" [ref=e545] [cursor=pointer]
+        - generic [ref=e546]:
+          - generic [ref=e547]:
+            - link [ref=e548] [cursor=pointer]:
+              - /url: /AI-R-D---Github-copilot/product/4
+            - button "♡" [ref=e549] [cursor=pointer]
+          - paragraph [ref=e550]: Sophisticated Peplum Blouse
+          - generic [ref=e551]:
+            - generic [ref=e552]: LKR 100.00
+            - generic [ref=e553]: LKR 150.00
+          - generic [ref=e554]:
+            - button "S" [ref=e555] [cursor=pointer]
+            - button "M" [ref=e556] [cursor=pointer]
+            - button "L" [ref=e557] [cursor=pointer]
+            - button "XL" [ref=e558] [cursor=pointer]
+            - button "XXL" [ref=e559] [cursor=pointer]
+          - button "Add to Cart" [ref=e561] [cursor=pointer]
+    - generic [ref=e563]:
+      - heading "Exclusive" [level=1] [ref=e564]
+      - heading "Offers For You" [level=1] [ref=e565]
+      - paragraph [ref=e566]: ONLY ON BEST SELLERS PRODUCT
+      - button "Check Now!" [ref=e567] [cursor=pointer]
+    - generic [ref=e569]:
+      - heading "New Collections" [level=1] [ref=e570]
+      - separator [ref=e571]
+      - generic [ref=e572]:
+        - generic [ref=e573]:
+          - generic [ref=e574]:
+            - link [ref=e575] [cursor=pointer]:
+              - /url: /AI-R-D---Github-copilot/product/2
+            - button "♡" [ref=e576] [cursor=pointer]
+          - paragraph [ref=e577]: Elegant Overlap Collar Top
+          - generic [ref=e578]:
+            - generic [ref=e579]: LKR 85.00
+            - generic [ref=e580]: LKR 120.50
+          - generic [ref=e581]:
+            - button "S" [ref=e582] [cursor=pointer]
+            - button "M" [ref=e583] [cursor=pointer]
+            - button "L" [ref=e584] [cursor=pointer]
+            - button "XL" [ref=e585] [cursor=pointer]
+            - button "XXL" [ref=e586] [cursor=pointer]
+          - button "Add to Cart" [ref=e588] [cursor=pointer]
+        - generic [ref=e589]:
+          - generic [ref=e590]:
+            - link [ref=e591] [cursor=pointer]:
+              - /url: /AI-R-D---Github-copilot/product/8
+            - button "♡" [ref=e592] [cursor=pointer]
+          - paragraph [ref=e593]: Feminine Striped Peplum Top
+          - generic [ref=e594]:
+            - generic [ref=e595]: LKR 85.00
+            - generic [ref=e596]: LKR 120.50
+          - generic [ref=e597]:
+            - button "S" [ref=e598] [cursor=pointer]
+            - button "M" [ref=e599] [cursor=pointer]
+            - button "L" [ref=e600] [cursor=pointer]
+            - button "XL" [ref=e601] [cursor=pointer]
+            - button "XXL" [ref=e602] [cursor=pointer]
+          - button "Add to Cart" [ref=e604] [cursor=pointer]
+        - generic [ref=e605]:
+          - generic [ref=e606]:
+            - link [ref=e607] [cursor=pointer]:
+              - /url: /AI-R-D---Github-copilot/product/12
+            - button "♡" [ref=e608] [cursor=pointer]
+          - paragraph [ref=e609]: Sophisticated Flutter Sleeve Top
+          - generic [ref=e610]:
+            - generic [ref=e611]: LKR 85.00
+            - generic [ref=e612]: LKR 120.50
+          - generic [ref=e613]:
+            - button "S" [ref=e614] [cursor=pointer]
+            - button "M" [ref=e615] [cursor=pointer]
+            - button "L" [ref=e616] [cursor=pointer]
+            - button "XL" [ref=e617] [cursor=pointer]
+            - button "XXL" [ref=e618] [cursor=pointer]
+          - button "Add to Cart" [ref=e620] [cursor=pointer]
+        - generic [ref=e621]:
+          - generic [ref=e622]:
+            - link [ref=e623] [cursor=pointer]:
+              - /url: /AI-R-D---Github-copilot/product/14
+            - button "♡" [ref=e624] [cursor=pointer]
+          - paragraph [ref=e625]: Casual Green Zippered Jacket
+          - generic [ref=e626]:
+            - generic [ref=e627]: LKR 85.00
+            - generic [ref=e628]: LKR 120.50
+          - generic [ref=e629]:
+            - button "S" [ref=e630] [cursor=pointer]
+            - button "M" [ref=e631] [cursor=pointer]
+            - button "L" [ref=e632] [cursor=pointer]
+            - button "XL" [ref=e633] [cursor=pointer]
+            - button "XXL" [ref=e634] [cursor=pointer]
+          - button "Add to Cart" [ref=e636] [cursor=pointer]
+        - generic [ref=e637]:
+          - generic [ref=e638]:
+            - link [ref=e639] [cursor=pointer]:
+              - /url: /AI-R-D---Github-copilot/product/15
+            - button "♡" [ref=e640] [cursor=pointer]
+          - paragraph [ref=e641]: Versatile Bomber Jacket
+          - generic [ref=e642]:
+            - generic [ref=e643]: LKR 85.00
+            - generic [ref=e644]: LKR 120.50
+          - generic [ref=e645]:
+            - button "S" [ref=e646] [cursor=pointer]
+            - button "M" [ref=e647] [cursor=pointer]
+            - button "L" [ref=e648] [cursor=pointer]
+            - button "XL" [ref=e649] [cursor=pointer]
+            - button "XXL" [ref=e650] [cursor=pointer]
+          - button "Add to Cart" [ref=e652] [cursor=pointer]
+        - generic [ref=e653]:
+          - generic [ref=e654]:
+            - link [ref=e655] [cursor=pointer]:
+              - /url: /AI-R-D---Github-copilot/product/17
+            - button "♡" [ref=e656] [cursor=pointer]
+          - paragraph [ref=e657]: Men's Urban Style Jacket
+          - generic [ref=e658]:
+            - generic [ref=e659]: LKR 85.00
+            - generic [ref=e660]: LKR 120.50
+          - generic [ref=e661]:
+            - button "S" [ref=e662] [cursor=pointer]
+            - button "M" [ref=e663] [cursor=pointer]
+            - button "L" [ref=e664] [cursor=pointer]
+            - button "XL" [ref=e665] [cursor=pointer]
+            - button "XXL" [ref=e666] [cursor=pointer]
+          - button "Add to Cart" [ref=e668] [cursor=pointer]
+        - generic [ref=e669]:
+          - generic [ref=e670]:
+            - link [ref=e671] [cursor=pointer]:
+              - /url: /AI-R-D---Github-copilot/product/28
+            - button "♡" [ref=e672] [cursor=pointer]
+          - paragraph [ref=e673]: Hooded Colourblocked Sweatshirt
+          - generic [ref=e674]:
+            - generic [ref=e675]: LKR 85.00
+            - generic [ref=e676]: LKR 120.50
+          - generic [ref=e677]:
+            - button "S" [ref=e678] [cursor=pointer]
+            - button "M" [ref=e679] [cursor=pointer]
+            - button "L" [ref=e680] [cursor=pointer]
+            - button "XL" [ref=e681] [cursor=pointer]
+            - button "XXL" [ref=e682] [cursor=pointer]
+          - button "Add to Cart" [ref=e684] [cursor=pointer]
+        - generic [ref=e685]:
+          - generic [ref=e686]:
+            - link [ref=e687] [cursor=pointer]:
+              - /url: /AI-R-D---Github-copilot/product/35
+            - button "♡" [ref=e688] [cursor=pointer]
+          - paragraph [ref=e689]: Dynamic Boys' Sweatshirt
+          - generic [ref=e690]:
+            - generic [ref=e691]: LKR 85.00
+            - generic [ref=e692]: LKR 120.50
+          - generic [ref=e693]:
+            - button "S" [ref=e694] [cursor=pointer]
+            - button "M" [ref=e695] [cursor=pointer]
+            - button "L" [ref=e696] [cursor=pointer]
+            - button "XL" [ref=e697] [cursor=pointer]
+            - button "XXL" [ref=e698] [cursor=pointer]
+          - button "Add to Cart" [ref=e700] [cursor=pointer]
+    - generic [ref=e701]:
+      - heading "Get Exclusive Offers On Your Email" [level=1] [ref=e702]
+      - paragraph [ref=e703]: Subscribe to our newsletter and stay updated!
+      - generic [ref=e704]:
+        - textbox "Your Email Id" [ref=e705]
+        - button "Subscribe" [ref=e706] [cursor=pointer]
+  - generic [ref=e69]:
+    - list [ref=e71]:
+      - listitem [ref=e72] [cursor=pointer]: Company
+      - listitem [ref=e73] [cursor=pointer]: Products
+      - listitem [ref=e74] [cursor=pointer]: Offices
+      - listitem [ref=e75] [cursor=pointer]: About
+      - listitem [ref=e76] [cursor=pointer]: Contact
+    - generic [ref=e77]:
+      - generic [ref=e78] [cursor=pointer]
+      - generic [ref=e79] [cursor=pointer]
+      - generic [ref=e80] [cursor=pointer]
+    - generic [ref=e81]:
+      - separator [ref=e82]
+      - paragraph [ref=e83]: Copyright @ 2024 - All Rights Reserved

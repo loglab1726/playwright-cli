@@ -1,0 +1,69 @@
+- generic [ref=f4e3]:
+  - generic [ref=f4e4]:
+    - link [ref=f4e5] [cursor=pointer]:
+      - /url: /AI-R-D---Github-copilot
+      - img "OneStyle Logo" [ref=f4e6]
+      - paragraph [ref=f4e7]: OneStyle
+    - list [ref=f4e9]:
+      - listitem [ref=f4e10] [cursor=pointer]:
+        - link "Shop" [ref=f4e11]:
+          - /url: /AI-R-D---Github-copilot
+        - separator [ref=f4e12]
+      - listitem [ref=f4e13] [cursor=pointer]:
+        - link "Men" [ref=f4e14]:
+          - /url: /AI-R-D---Github-copilot/mens
+      - listitem [ref=f4e15] [cursor=pointer]:
+        - link "Women" [ref=f4e16]:
+          - /url: /AI-R-D---Github-copilot/womens
+      - listitem [ref=f4e17] [cursor=pointer]:
+        - link "Kids" [ref=f4e18]:
+          - /url: /AI-R-D---Github-copilot/kids
+    - generic [ref=f4e19]:
+      - link [ref=f4e20] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/profile
+        - button "Profile" [ref=f4e21]
+      - link [ref=f4e22] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/orders
+        - button "My Orders" [ref=f4e23]
+      - button "Logout" [ref=f4e24] [cursor=pointer]
+      - link "♡ 1" [active] [ref=f4e277] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/wishlist
+        - generic [ref=f4e26]: ♡
+        - generic [ref=f4e278]: "1"
+      - link [ref=f4e27] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/cart
+        - img "Cart Icon" [ref=f4e28]
+      - generic [ref=f4e29]: "1"
+  - generic [ref=f4e281]:
+    - heading "My Wishlist" [level=1] [ref=f4e282]
+    - paragraph [ref=f4e283]: 1 item saved
+    - generic [ref=f4e286]:
+      - generic [ref=f4e287]:
+        - link [ref=f4e288] [cursor=pointer]:
+          - /url: /AI-R-D---Github-copilot/product/2
+        - button "♥" [ref=f4e289] [cursor=pointer]
+      - paragraph [ref=f4e290]: Elegant Overlap Collar Top
+      - generic [ref=f4e291]:
+        - generic [ref=f4e292]: LKR 85.00
+        - generic [ref=f4e293]: LKR 120.50
+      - generic [ref=f4e294]:
+        - button "S" [ref=f4e295] [cursor=pointer]
+        - button "M" [ref=f4e296] [cursor=pointer]
+        - button "L" [ref=f4e297] [cursor=pointer]
+        - button "XL" [ref=f4e298] [cursor=pointer]
+        - button "XXL" [ref=f4e299] [cursor=pointer]
+      - button "Add to Cart" [ref=f4e301] [cursor=pointer]
+  - generic [ref=f4e71]:
+    - list [ref=f4e73]:
+      - listitem [ref=f4e74] [cursor=pointer]: Company
+      - listitem [ref=f4e75] [cursor=pointer]: Products
+      - listitem [ref=f4e76] [cursor=pointer]: Offices
+      - listitem [ref=f4e77] [cursor=pointer]: About
+      - listitem [ref=f4e78] [cursor=pointer]: Contact
+    - generic [ref=f4e79]:
+      - generic [ref=f4e80] [cursor=pointer]
+      - generic [ref=f4e81] [cursor=pointer]
+      - generic [ref=f4e82] [cursor=pointer]
+    - generic [ref=f4e83]:
+      - separator [ref=f4e84]
+      - paragraph [ref=f4e85]: Copyright @ 2024 - All Rights Reserved

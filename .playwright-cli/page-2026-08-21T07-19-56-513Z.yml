@@ -1,0 +1,52 @@
+- generic [ref=f1e3]:
+  - generic [ref=f1e4]:
+    - link [ref=f1e5] [cursor=pointer]:
+      - /url: /AI-R-D---Github-copilot
+      - img "OneStyle Logo" [ref=f1e6]
+      - paragraph [ref=f1e7]: OneStyle
+    - list [ref=f1e9]:
+      - listitem [ref=f1e10] [cursor=pointer]:
+        - link "Shop" [ref=f1e11]:
+          - /url: /AI-R-D---Github-copilot
+        - separator [ref=f1e12]
+      - listitem [ref=f1e13] [cursor=pointer]:
+        - link "Men" [ref=f1e14]:
+          - /url: /AI-R-D---Github-copilot/mens
+      - listitem [ref=f1e15] [cursor=pointer]:
+        - link "Women" [ref=f1e16]:
+          - /url: /AI-R-D---Github-copilot/womens
+      - listitem [ref=f1e17] [cursor=pointer]:
+        - link "Kids" [ref=f1e18]:
+          - /url: /AI-R-D---Github-copilot/kids
+    - generic [ref=f1e19]:
+      - link [ref=f1e20] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/login
+        - button "Sign In" [ref=f1e21]
+      - link "♡" [ref=f1e22] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/wishlist
+      - link [ref=f1e24] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/cart
+        - img "Cart Icon" [ref=f1e25]
+      - generic [ref=f1e26]: "0"
+  - generic [ref=f1e28]:
+    - heading "Login" [level=1] [ref=f1e29]
+    - generic [ref=f1e30]:
+      - generic [ref=f1e31]:
+        - textbox "Email Address" [ref=f1e32]
+        - textbox "Password" [ref=f1e33]
+      - button "Login" [ref=f1e34] [cursor=pointer]
+    - paragraph [ref=f1e35]: Don't have an account? Sign Up
+  - generic [ref=f1e36]:
+    - list [ref=f1e38]:
+      - listitem [ref=f1e39] [cursor=pointer]: Company
+      - listitem [ref=f1e40] [cursor=pointer]: Products
+      - listitem [ref=f1e41] [cursor=pointer]: Offices
+      - listitem [ref=f1e42] [cursor=pointer]: About
+      - listitem [ref=f1e43] [cursor=pointer]: Contact
+    - generic [ref=f1e44]:
+      - generic [ref=f1e45] [cursor=pointer]
+      - generic [ref=f1e46] [cursor=pointer]
+      - generic [ref=f1e47] [cursor=pointer]
+    - generic [ref=f1e48]:
+      - separator [ref=f1e49]
+      - paragraph [ref=f1e50]: Copyright @ 2024 - All Rights Reserved

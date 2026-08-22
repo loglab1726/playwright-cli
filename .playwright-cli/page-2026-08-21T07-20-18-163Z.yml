@@ -1,0 +1,87 @@
+- generic [ref=f1e3]:
+  - generic [ref=f1e4]:
+    - link [ref=f1e5] [cursor=pointer]:
+      - /url: /AI-R-D---Github-copilot
+      - img "OneStyle Logo" [ref=f1e6]
+      - paragraph [ref=f1e7]: OneStyle
+    - list [ref=f1e9]:
+      - listitem [ref=f1e10] [cursor=pointer]:
+        - link "Shop" [ref=f1e11]:
+          - /url: /AI-R-D---Github-copilot
+        - separator [ref=f1e12]
+      - listitem [ref=f1e13] [cursor=pointer]:
+        - link "Men" [ref=f1e14]:
+          - /url: /AI-R-D---Github-copilot/mens
+      - listitem [ref=f1e15] [cursor=pointer]:
+        - link "Women" [ref=f1e16]:
+          - /url: /AI-R-D---Github-copilot/womens
+      - listitem [ref=f1e17] [cursor=pointer]:
+        - link "Kids" [ref=f1e18]:
+          - /url: /AI-R-D---Github-copilot/kids
+    - generic [ref=f1e19]:
+      - link [ref=f1e51] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/profile
+        - button "Profile" [ref=f1e52]
+      - link [ref=f1e53] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/orders
+        - button "My Orders" [ref=f1e54]
+      - button "Logout" [ref=f1e55] [cursor=pointer]
+      - link "♡" [ref=f1e22] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/wishlist
+      - link [ref=f1e24] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/cart
+        - img "Cart Icon" [ref=f1e25]
+      - generic [ref=f1e26]: "0"
+  - generic [ref=f1e56]:
+    - generic [ref=f1e57]:
+      - generic [ref=f1e58]:
+        - heading "Welcome to Our Store" [level=2] [ref=f1e59]
+        - heading "Discover New Collections" [level=1] [ref=f1e60]
+        - paragraph [ref=f1e61]: Explore the latest trends designed for everyone.
+        - generic [ref=f1e62]:
+          - button "Shop Now" [ref=f1e63] [cursor=pointer]
+          - button [ref=f1e64] [cursor=pointer]:
+            - text: Learn More
+            - img "arrow icon" [ref=f1e65]
+        - generic [ref=f1e66]:
+          - generic [ref=f1e67]:
+            - img "feature icon" [ref=f1e68]
+            - paragraph [ref=f1e69]: Free Shipping
+          - generic [ref=f1e70]:
+            - img "feature icon" [ref=f1e71]
+            - paragraph [ref=f1e72]: Easy Returns
+          - generic [ref=f1e73]:
+            - img "feature icon" [ref=f1e74]
+            - paragraph [ref=f1e75]: Secure Payment
+      - img "Hero" [ref=f1e77]
+    - generic [ref=f1e78]:
+      - heading "POPULAR IN WOMEN" [level=1] [ref=f1e79]
+      - separator [ref=f1e80]
+    - generic [ref=f1e82]:
+      - heading "Exclusive" [level=1] [ref=f1e83]
+      - heading "Offers For You" [level=1] [ref=f1e84]
+      - paragraph [ref=f1e85]: ONLY ON BEST SELLERS PRODUCT
+      - button "Check Now!" [ref=f1e86] [cursor=pointer]
+    - generic [ref=f1e88]:
+      - heading "New Collections" [level=1] [ref=f1e89]
+      - separator [ref=f1e90]
+    - generic [ref=f1e91]:
+      - heading "Get Exclusive Offers On Your Email" [level=1] [ref=f1e92]
+      - paragraph [ref=f1e93]: Subscribe to our newsletter and stay updated!
+      - generic [ref=f1e94]:
+        - textbox "Your Email Id" [ref=f1e95]
+        - button "Subscribe" [ref=f1e96] [cursor=pointer]
+  - generic [ref=f1e36]:
+    - list [ref=f1e38]:
+      - listitem [ref=f1e39] [cursor=pointer]: Company
+      - listitem [ref=f1e40] [cursor=pointer]: Products
+      - listitem [ref=f1e41] [cursor=pointer]: Offices
+      - listitem [ref=f1e42] [cursor=pointer]: About
+      - listitem [ref=f1e43] [cursor=pointer]: Contact
+    - generic [ref=f1e44]:
+      - generic [ref=f1e45] [cursor=pointer]
+      - generic [ref=f1e46] [cursor=pointer]
+      - generic [ref=f1e47] [cursor=pointer]
+    - generic [ref=f1e48]:
+      - separator [ref=f1e49]
+      - paragraph [ref=f1e50]: Copyright @ 2024 - All Rights Reserved

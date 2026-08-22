@@ -1,0 +1,253 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - link [ref=e5] [cursor=pointer]:
+      - /url: /AI-R-D---Github-copilot
+      - img "OneStyle Logo" [ref=e6]
+      - paragraph [ref=e7]: OneStyle
+    - list [ref=e9]:
+      - listitem [ref=e10] [cursor=pointer]:
+        - link "Shop" [ref=e11]:
+          - /url: /AI-R-D---Github-copilot
+        - separator [ref=e12]
+      - listitem [ref=e13] [cursor=pointer]:
+        - link "Men" [ref=e14]:
+          - /url: /AI-R-D---Github-copilot/mens
+      - listitem [ref=e15] [cursor=pointer]:
+        - link "Women" [ref=e16]:
+          - /url: /AI-R-D---Github-copilot/womens
+      - listitem [ref=e17] [cursor=pointer]:
+        - link "Kids" [ref=e18]:
+          - /url: /AI-R-D---Github-copilot/kids
+    - generic [ref=e19]:
+      - link [ref=e20] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/login
+        - button "Sign In" [ref=e21]
+      - link "♡" [ref=e22] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/wishlist
+      - link [ref=e24] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/cart
+        - img "Cart Icon" [ref=e25]
+      - generic [ref=e26]: "0"
+  - generic [ref=e84]:
+    - paragraph [ref=e86]:
+      - generic [ref=e87]: Showing 12
+      - text: products
+    - generic [ref=e88]:
+      - textbox "Search products..." [ref=e89]
+      - combobox [ref=e90]:
+        - option "All Prices" [selected]
+        - option "Under LKR 100"
+        - option "LKR 100 – 200"
+        - option "Above LKR 200"
+      - combobox [ref=e91]:
+        - option "Sort By" [selected]
+        - 'option "Price: Low to High"'
+        - 'option "Price: High to Low"'
+        - 'option "Name: A – Z"'
+    - generic [ref=e92]:
+      - generic [ref=e93]:
+        - generic [ref=e94]:
+          - link [ref=e95] [cursor=pointer]:
+            - /url: /AI-R-D---Github-copilot/product/1
+          - button "♡" [ref=e96] [cursor=pointer]
+        - paragraph [ref=e97]: Casual Striped Blouse with Peplum Hem
+        - generic [ref=e98]:
+          - generic [ref=e99]: LKR 50.00
+          - generic [ref=e100]: LKR 80.50
+        - generic [ref=e101]:
+          - button "S" [ref=e102] [cursor=pointer]
+          - button "M" [ref=e103] [cursor=pointer]
+          - button "L" [ref=e104] [cursor=pointer]
+          - button "XL" [ref=e105] [cursor=pointer]
+          - button "XXL" [ref=e106] [cursor=pointer]
+        - button "Add to Cart" [ref=e108] [cursor=pointer]
+      - generic [ref=e109]:
+        - generic [ref=e110]:
+          - link [ref=e111] [cursor=pointer]:
+            - /url: /AI-R-D---Github-copilot/product/2
+          - button "♡" [ref=e112] [cursor=pointer]
+        - paragraph [ref=e113]: Elegant Overlap Collar Top
+        - generic [ref=e114]:
+          - generic [ref=e115]: LKR 85.00
+          - generic [ref=e116]: LKR 120.50
+        - generic [ref=e117]:
+          - button "S" [ref=e118] [cursor=pointer]
+          - button "M" [ref=e119] [cursor=pointer]
+          - button "L" [ref=e120] [cursor=pointer]
+          - button "XL" [ref=e121] [cursor=pointer]
+          - button "XXL" [ref=e122] [cursor=pointer]
+        - button "Add to Cart" [ref=e124] [cursor=pointer]
+      - generic [ref=e125]:
+        - generic [ref=e126]:
+          - link [ref=e127] [cursor=pointer]:
+            - /url: /AI-R-D---Github-copilot/product/3
+          - button "♡" [ref=e128] [cursor=pointer]
+        - paragraph [ref=e129]: Striped Summer Flutter Blouse
+        - generic [ref=e130]:
+          - generic [ref=e131]: LKR 60.00
+          - generic [ref=e132]: LKR 100.50
+        - generic [ref=e133]:
+          - button "S" [ref=e134] [cursor=pointer]
+          - button "M" [ref=e135] [cursor=pointer]
+          - button "L" [ref=e136] [cursor=pointer]
+          - button "XL" [ref=e137] [cursor=pointer]
+          - button "XXL" [ref=e138] [cursor=pointer]
+        - button "Add to Cart" [ref=e140] [cursor=pointer]
+      - generic [ref=e141]:
+        - generic [ref=e142]:
+          - link [ref=e143] [cursor=pointer]:
+            - /url: /AI-R-D---Github-copilot/product/4
+          - button "♡" [ref=e144] [cursor=pointer]
+        - paragraph [ref=e145]: Sophisticated Peplum Blouse
+        - generic [ref=e146]:
+          - generic [ref=e147]: LKR 100.00
+          - generic [ref=e148]: LKR 150.00
+        - generic [ref=e149]:
+          - button "S" [ref=e150] [cursor=pointer]
+          - button "M" [ref=e151] [cursor=pointer]
+          - button "L" [ref=e152] [cursor=pointer]
+          - button "XL" [ref=e153] [cursor=pointer]
+          - button "XXL" [ref=e154] [cursor=pointer]
+        - button "Add to Cart" [ref=e156] [cursor=pointer]
+      - generic [ref=e157]:
+        - generic [ref=e158]:
+          - link [ref=e159] [cursor=pointer]:
+            - /url: /AI-R-D---Github-copilot/product/5
+          - button "♡" [ref=e160] [cursor=pointer]
+        - paragraph [ref=e161]: Chic Overlap Collar Blouse
+        - generic [ref=e162]:
+          - generic [ref=e163]: LKR 85.00
+          - generic [ref=e164]: LKR 120.50
+        - generic [ref=e165]:
+          - button "S" [ref=e166] [cursor=pointer]
+          - button "M" [ref=e167] [cursor=pointer]
+          - button "L" [ref=e168] [cursor=pointer]
+          - button "XL" [ref=e169] [cursor=pointer]
+          - button "XXL" [ref=e170] [cursor=pointer]
+        - button "Add to Cart" [ref=e172] [cursor=pointer]
+      - generic [ref=e173]:
+        - generic [ref=e174]:
+          - link [ref=e175] [cursor=pointer]:
+            - /url: /AI-R-D---Github-copilot/product/6
+          - button "♡" [ref=e176] [cursor=pointer]
+        - paragraph [ref=e177]: Flutter Sleeve Stripe Top
+        - generic [ref=e178]:
+          - generic [ref=e179]: LKR 85.00
+          - generic [ref=e180]: LKR 120.50
+        - generic [ref=e181]:
+          - button "S" [ref=e182] [cursor=pointer]
+          - button "M" [ref=e183] [cursor=pointer]
+          - button "L" [ref=e184] [cursor=pointer]
+          - button "XL" [ref=e185] [cursor=pointer]
+          - button "XXL" [ref=e186] [cursor=pointer]
+        - button "Add to Cart" [ref=e188] [cursor=pointer]
+      - generic [ref=e189]:
+        - generic [ref=e190]:
+          - link [ref=e191] [cursor=pointer]:
+            - /url: /AI-R-D---Github-copilot/product/7
+          - button "♡" [ref=e192] [cursor=pointer]
+        - paragraph [ref=e193]: Striped Day-Out Blouse
+        - generic [ref=e194]:
+          - generic [ref=e195]: LKR 85.00
+          - generic [ref=e196]: LKR 120.50
+        - generic [ref=e197]:
+          - button "S" [ref=e198] [cursor=pointer]
+          - button "M" [ref=e199] [cursor=pointer]
+          - button "L" [ref=e200] [cursor=pointer]
+          - button "XL" [ref=e201] [cursor=pointer]
+          - button "XXL" [ref=e202] [cursor=pointer]
+        - button "Add to Cart" [ref=e204] [cursor=pointer]
+      - generic [ref=e205]:
+        - generic [ref=e206]:
+          - link [ref=e207] [cursor=pointer]:
+            - /url: /AI-R-D---Github-copilot/product/8
+          - button "♡" [ref=e208] [cursor=pointer]
+        - paragraph [ref=e209]: Feminine Striped Peplum Top
+        - generic [ref=e210]:
+          - generic [ref=e211]: LKR 85.00
+          - generic [ref=e212]: LKR 120.50
+        - generic [ref=e213]:
+          - button "S" [ref=e214] [cursor=pointer]
+          - button "M" [ref=e215] [cursor=pointer]
+          - button "L" [ref=e216] [cursor=pointer]
+          - button "XL" [ref=e217] [cursor=pointer]
+          - button "XXL" [ref=e218] [cursor=pointer]
+        - button "Add to Cart" [ref=e220] [cursor=pointer]
+      - generic [ref=e221]:
+        - generic [ref=e222]:
+          - link [ref=e223] [cursor=pointer]:
+            - /url: /AI-R-D---Github-copilot/product/9
+          - button "♡" [ref=e224] [cursor=pointer]
+        - paragraph [ref=e225]: Modern Striped Casual Blouse
+        - generic [ref=e226]:
+          - generic [ref=e227]: LKR 85.00
+          - generic [ref=e228]: LKR 120.50
+        - generic [ref=e229]:
+          - button "S" [ref=e230] [cursor=pointer]
+          - button "M" [ref=e231] [cursor=pointer]
+          - button "L" [ref=e232] [cursor=pointer]
+          - button "XL" [ref=e233] [cursor=pointer]
+          - button "XXL" [ref=e234] [cursor=pointer]
+        - button "Add to Cart" [ref=e236] [cursor=pointer]
+      - generic [ref=e237]:
+        - generic [ref=e238]:
+          - link [ref=e239] [cursor=pointer]:
+            - /url: /AI-R-D---Github-copilot/product/10
+          - button "♡" [ref=e240] [cursor=pointer]
+        - paragraph [ref=e241]: Peplum Hem Overlap Top
+        - generic [ref=e242]:
+          - generic [ref=e243]: LKR 85.00
+          - generic [ref=e244]: LKR 120.50
+        - generic [ref=e245]:
+          - button "S" [ref=e246] [cursor=pointer]
+          - button "M" [ref=e247] [cursor=pointer]
+          - button "L" [ref=e248] [cursor=pointer]
+          - button "XL" [ref=e249] [cursor=pointer]
+          - button "XXL" [ref=e250] [cursor=pointer]
+        - button "Add to Cart" [ref=e252] [cursor=pointer]
+      - generic [ref=e253]:
+        - generic [ref=e254]:
+          - link [ref=e255] [cursor=pointer]:
+            - /url: /AI-R-D---Github-copilot/product/11
+          - button "♡" [ref=e256] [cursor=pointer]
+        - paragraph [ref=e257]: Relaxed Fit Striped Blouse
+        - generic [ref=e258]:
+          - generic [ref=e259]: LKR 85.00
+          - generic [ref=e260]: LKR 120.50
+        - generic [ref=e261]:
+          - button "S" [ref=e262] [cursor=pointer]
+          - button "M" [ref=e263] [cursor=pointer]
+          - button "L" [ref=e264] [cursor=pointer]
+          - button "XL" [ref=e265] [cursor=pointer]
+          - button "XXL" [ref=e266] [cursor=pointer]
+        - button "Add to Cart" [ref=e268] [cursor=pointer]
+      - generic [ref=e269]:
+        - generic [ref=e270]:
+          - link [ref=e271] [cursor=pointer]:
+            - /url: /AI-R-D---Github-copilot/product/12
+          - button "♡" [ref=e272] [cursor=pointer]
+        - paragraph [ref=e273]: Sophisticated Flutter Sleeve Top
+        - generic [ref=e274]:
+          - generic [ref=e275]: LKR 85.00
+          - generic [ref=e276]: LKR 120.50
+        - generic [ref=e277]:
+          - button "S" [ref=e278] [cursor=pointer]
+          - button "M" [ref=e279] [cursor=pointer]
+          - button "L" [ref=e280] [cursor=pointer]
+          - button "XL" [ref=e281] [cursor=pointer]
+          - button "XXL" [ref=e282] [cursor=pointer]
+        - button "Add to Cart" [ref=e284] [cursor=pointer]
+  - generic [ref=e69]:
+    - list [ref=e71]:
+      - listitem [ref=e72] [cursor=pointer]: Company
+      - listitem [ref=e73] [cursor=pointer]: Products
+      - listitem [ref=e74] [cursor=pointer]: Offices
+      - listitem [ref=e75] [cursor=pointer]: About
+      - listitem [ref=e76] [cursor=pointer]: Contact
+    - generic [ref=e77]:
+      - generic [ref=e78] [cursor=pointer]
+      - generic [ref=e79] [cursor=pointer]
+      - generic [ref=e80] [cursor=pointer]
+    - generic [ref=e81]:
+      - separator [ref=e82]
+      - paragraph [ref=e83]: Copyright @ 2024 - All Rights Reserved

@@ -1,0 +1,2 @@
+Timestamp, Test Name, Failing Step/Locator, Error Summary
+2026-08-21T14:51:00+05:30, submits PayPal delivery form and reaches the success screen, PayPal success toast, Application reaches the success screen but does not expose "Order ORD-XXXXXX placed successfully!" for assertion

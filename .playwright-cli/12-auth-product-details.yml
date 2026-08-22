@@ -1,0 +1,93 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - link [ref=e5] [cursor=pointer]:
+      - /url: /AI-R-D---Github-copilot
+      - img "OneStyle Logo" [ref=e6]
+      - paragraph [ref=e7]: OneStyle
+    - list [ref=e9]:
+      - listitem [ref=e10] [cursor=pointer]:
+        - link "Shop" [ref=e11]:
+          - /url: /AI-R-D---Github-copilot
+        - separator [ref=e12]
+      - listitem [ref=e13] [cursor=pointer]:
+        - link "Men" [ref=e14]:
+          - /url: /AI-R-D---Github-copilot/mens
+      - listitem [ref=e15] [cursor=pointer]:
+        - link "Women" [ref=e16]:
+          - /url: /AI-R-D---Github-copilot/womens
+      - listitem [ref=e17] [cursor=pointer]:
+        - link "Kids" [ref=e18]:
+          - /url: /AI-R-D---Github-copilot/kids
+    - generic [ref=e19]:
+      - link [ref=e20] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/login
+        - button "Sign In" [ref=e21]
+      - link "♡" [ref=e22] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/wishlist
+      - link [ref=e24] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/cart
+        - img "Cart Icon" [ref=e25]
+      - generic [ref=e26]: "0"
+  - generic [ref=e285]:
+    - generic [ref=e286]:
+      - text: HOME
+      - img "Arrow Icon" [ref=e287]
+      - text: SHOP
+      - img "Arrow Icon" [ref=e288]
+      - text: women
+      - img "Arrow Icon" [ref=e289]
+      - text: Casual Striped Blouse with Peplum Hem
+    - generic [ref=e290]:
+      - img "Product" [ref=e292]
+      - generic [ref=e294]:
+        - img "Product" [ref=e295] [cursor=pointer]
+        - img "Product" [ref=e296] [cursor=pointer]
+        - img "Product" [ref=e297] [cursor=pointer]
+      - generic [ref=e298]:
+        - heading "Casual Striped Blouse with Peplum Hem" [level=1] [ref=e299]
+        - generic [ref=e300]:
+          - img "Star" [ref=e301]
+          - img "Star" [ref=e302]
+          - img "Star" [ref=e303]
+          - img "Star" [ref=e304]
+          - img "Star" [ref=e305]
+          - paragraph [ref=e306]: (0 Reviews)
+        - generic [ref=e307]:
+          - generic [ref=e308]: LKR 80.50
+          - generic [ref=e309]: LKR 50.00
+        - paragraph [ref=e311]: A stylish striped blouse featuring flutter sleeves and a peplum hem, perfect for casual outings.
+        - generic [ref=e312]:
+          - heading "Select Size" [level=1] [ref=e313]
+          - generic [ref=e314]:
+            - generic [ref=e315] [cursor=pointer]: S
+            - generic [ref=e316] [cursor=pointer]: M
+            - generic [ref=e317] [cursor=pointer]: L
+            - generic [ref=e318] [cursor=pointer]: XL
+            - generic [ref=e319] [cursor=pointer]: XXL
+        - generic [ref=e320]:
+          - heading "Quantity" [level=1] [ref=e321]
+          - generic [ref=e322]:
+            - button "−" [ref=e323] [cursor=pointer]
+            - generic [ref=e324]: "1"
+            - button "+" [ref=e325] [cursor=pointer]
+        - button "Add to Cart" [ref=e326] [cursor=pointer]
+        - button "Buy Now" [ref=e327] [cursor=pointer]
+        - paragraph [ref=e328]:
+          - generic [ref=e329]: "Category: women"
+        - generic [ref=e330]:
+          - heading "Customer Reviews" [level=2] [ref=e331]
+          - paragraph [ref=e332]: No reviews yet. Be the first!
+  - generic [ref=e69]:
+    - list [ref=e71]:
+      - listitem [ref=e72] [cursor=pointer]: Company
+      - listitem [ref=e73] [cursor=pointer]: Products
+      - listitem [ref=e74] [cursor=pointer]: Offices
+      - listitem [ref=e75] [cursor=pointer]: About
+      - listitem [ref=e76] [cursor=pointer]: Contact
+    - generic [ref=e77]:
+      - generic [ref=e78] [cursor=pointer]
+      - generic [ref=e79] [cursor=pointer]
+      - generic [ref=e80] [cursor=pointer]
+    - generic [ref=e81]:
+      - separator [ref=e82]
+      - paragraph [ref=e83]: Copyright @ 2024 - All Rights Reserved

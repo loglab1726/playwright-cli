@@ -1,0 +1,81 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - link [ref=e5] [cursor=pointer]:
+      - /url: /AI-R-D---Github-copilot
+      - img "OneStyle Logo" [ref=e6]
+      - paragraph [ref=e7]: OneStyle
+    - list [ref=e9]:
+      - listitem [ref=e10] [cursor=pointer]:
+        - link "Shop" [ref=e11]:
+          - /url: /AI-R-D---Github-copilot
+        - separator [ref=e12]
+      - listitem [ref=e13] [cursor=pointer]:
+        - link "Men" [ref=e14]:
+          - /url: /AI-R-D---Github-copilot/mens
+      - listitem [ref=e15] [cursor=pointer]:
+        - link "Women" [ref=e16]:
+          - /url: /AI-R-D---Github-copilot/womens
+      - listitem [ref=e17] [cursor=pointer]:
+        - link "Kids" [ref=e18]:
+          - /url: /AI-R-D---Github-copilot/kids
+    - generic [ref=e19]:
+      - link [ref=e20] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/login
+        - button "Sign In" [ref=e21]
+      - link "♡" [ref=e22] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/wishlist
+      - link [active] [ref=e24] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/cart
+        - img "Cart Icon" [ref=e25]
+      - generic [ref=e26]: "1"
+  - generic [ref=e335]:
+    - generic [ref=e336]:
+      - paragraph [ref=e337]: Products
+      - paragraph [ref=e338]: Title
+      - paragraph [ref=e339]: Price
+      - paragraph [ref=e340]: Quantity
+      - paragraph [ref=e341]: Total
+      - paragraph [ref=e342]: Remove
+    - separator [ref=e343]
+    - generic [ref=e344]:
+      - generic [ref=e345]:
+        - paragraph [ref=e346]: Casual Striped Blouse with Peplum Hem
+        - paragraph [ref=e347]: LKR 50.00
+        - generic [ref=e348]:
+          - button "-" [ref=e349] [cursor=pointer]
+          - generic [ref=e350]: "1"
+          - button "+" [ref=e351] [cursor=pointer]
+        - paragraph [ref=e352]: LKR 50
+        - img "Remove" [ref=e353] [cursor=pointer]
+      - separator [ref=e354]
+    - generic [ref=e356]:
+      - heading "Cart Totals" [level=1] [ref=e357]
+      - generic [ref=e358]:
+        - generic [ref=e359]:
+          - paragraph [ref=e360]: "Sub Total:"
+          - paragraph [ref=e361]: LKR 50
+        - separator [ref=e362]
+        - generic [ref=e363]:
+          - paragraph [ref=e364]: Shipping Free
+          - paragraph [ref=e365]: Free
+        - separator [ref=e366]
+        - generic [ref=e367]:
+          - heading "Total:" [level=3] [ref=e368]
+          - heading "LKR 50" [level=3] [ref=e369]
+      - generic [ref=e370]:
+        - paragraph [ref=e371]: Sign in to proceed with checkout
+        - button "Sign Up / Login" [ref=e372] [cursor=pointer]
+  - generic [ref=e69]:
+    - list [ref=e71]:
+      - listitem [ref=e72] [cursor=pointer]: Company
+      - listitem [ref=e73] [cursor=pointer]: Products
+      - listitem [ref=e74] [cursor=pointer]: Offices
+      - listitem [ref=e75] [cursor=pointer]: About
+      - listitem [ref=e76] [cursor=pointer]: Contact
+    - generic [ref=e77]:
+      - generic [ref=e78] [cursor=pointer]
+      - generic [ref=e79] [cursor=pointer]
+      - generic [ref=e80] [cursor=pointer]
+    - generic [ref=e81]:
+      - separator [ref=e82]
+      - paragraph [ref=e83]: Copyright @ 2024 - All Rights Reserved

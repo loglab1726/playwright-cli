@@ -1,0 +1,214 @@
+name: Manual Test → Playwright Pipeline
+
+# Pipeline shape (docs/pipeline-plan.md Section 7):
+#   push to manual-tests/**.md
+#     -> [dedup]           compute which files actually changed (content hash, not just git diff,
+#                           so a revert-and-reapply doesn't waste a dispatch)
+#     -> [generate-and-run] one job per new/changed file, matrix, max-parallel 3, invokes
+#                           `copilot -p ...` headlessly; test execution inside that session goes
+#                           ONLY through scripts/bounded-run.js (Layer A+B, see Section 4)
+#     -> [finalize]         workflow (not the agent) creates the commit/PR; hard-stopped files get
+#                           a draft PR labeled needs-human with the report/trace attached
+#     -> the EXISTING .github/workflows/playwright.yml still runs independently on the resulting
+#        PR and is the real pass/fail gate — this workflow's job output is never trusted as final.
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'manual-tests/**.md'
+  workflow_dispatch: {}
+
+jobs:
+  dedup:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.compute.outputs.matrix }}
+      has_changes: ${{ steps.compute.outputs.has_changes }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Compute changed manual-tests files (content hash vs. committed manifest)
+        id: compute
+        run: |
+          CHANGED=$(node scripts/compute-manual-test-hashes.js check)
+          echo "Changed files: $CHANGED"
+          COUNT=$(echo "$CHANGED" | node -e "
+            let d='';process.stdin.on('data',c=>d+=c);
+            process.stdin.on('end',()=>{const arr=JSON.parse(d);console.log(arr.length)});
+          ")
+          if [ "$COUNT" = "0" ]; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
+          MATRIX_JSON=$(echo "$CHANGED" | node -e "
+            let d='';process.stdin.on('data',c=>d+=c);
+            process.stdin.on('end',()=>{
+              const files=JSON.parse(d);
+              console.log(JSON.stringify({ file: files }));
+            });
+          ")
+          echo "matrix=$MATRIX_JSON" >> "$GITHUB_OUTPUT"
+
+  generate-and-run:
+    needs: dedup
+    if: needs.dedup.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      # Cap fan-out deliberately: each `copilot -p` call is a metered Copilot
+      # session (plan request allowance), not raw API tokens. A single commit
+      # adding 10 manual-test files should not fan out to 10 fully-parallel
+      # sessions each burning up to 3 heal attempts. Tune based on observed
+      # cost (docs/pipeline-plan.md Section 7, "Why the matrix/concurrency
+      # limit matters").
+      max-parallel: 3
+      fail-fast: false
+      matrix: ${{ fromJson(needs.dedup.outputs.matrix) }}
+    outputs: {}
+    env:
+      COPILOT_OTEL_ENABLED: 'true'
+      COPILOT_OTEL_FILE_EXPORTER_PATH: ${{ github.workspace }}/otel-trace-${{ strategy.job-index }}.jsonl
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Pre-flight — confirm skill/agent are discoverable
+        run: copilot plugins list --json || echo "::warning::copilot plugins list failed or copilot CLI not installed on this runner — see docs/pipeline-plan.md Section 9 item 4 for auth/setup prerequisites."
+
+      - name: Record pre-run CSV row count
+        id: pre_csv
+        run: |
+          if [ -f unresolved-test-failures.csv ]; then
+            echo "count=$(wc -l < unresolved-test-failures.csv)" >> "$GITHUB_OUTPUT"
+          else
+            echo "count=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      # NOTE: `copilot` CLI auth is expected via COPILOT_GITHUB_TOKEN / GH_TOKEN
+      # / GITHUB_TOKEN precedence (docs/pipeline-plan.md Section 3 and Section 9
+      # item 2). Wire the actual secret name used by your org below.
+      - name: Generate, execute, and bounded-heal via Copilot CLI
+        id: copilot_run
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+        run: |
+          set +e
+          copilot -p "Generate, execute, and bounded-heal a Playwright test for ${{ matrix.file }}. Follow .github/copilot-instructions.md, AGENTS.md, and the pom-conventions + playwright-cli skills exactly. Run tests ONLY via node scripts/bounded-run.js <spec> — never call npx playwright test or npm test directly." \
+            --agent playwright-test-generator \
+            --allow-tool 'shell(node scripts/bounded-run.js:*)' \
+            --allow-tool 'shell(git:*)' \
+            --deny-tool 'shell(git push)' \
+            --deny-tool 'shell(npx playwright test:*)' \
+            --deny-tool 'shell(npm test:*)' \
+            --deny-tool 'read(.env)' \
+            --deny-tool 'read(.auth/*)' \
+            --no-ask-user \
+            --model claude-sonnet-4.6 \
+            --max-ai-credits=40 \
+            --output-format json -s \
+            > "copilot-output-${{ strategy.job-index }}.jsonl"
+          COPILOT_EXIT=$?
+          echo "copilot_exit=$COPILOT_EXIT" >> "$GITHUB_OUTPUT"
+          exit 0  # never fail this step directly — the next step interprets the real state
+
+      - name: Determine hard-stop vs. success
+        id: outcome
+        run: |
+          # bounded-run.js writes deterministically to unresolved-test-failures.csv
+          # ONLY on hard stop (script does this, not the agent — see Section 4). A
+          # row-count increase during this job is a more reliable signal than
+          # guessing the generated spec's filename from the manual-tests source
+          # path, since the agent chooses (or appends to) the spec file itself.
+          if [ -f unresolved-test-failures.csv ]; then
+            POST_COUNT=$(wc -l < unresolved-test-failures.csv)
+          else
+            POST_COUNT=0
+          fi
+          if [ "$POST_COUNT" -gt "${{ steps.pre_csv.outputs.count }}" ]; then
+            echo "result=hard-stop" >> "$GITHUB_OUTPUT"
+          elif [ "${{ steps.copilot_run.outputs.copilot_exit }}" = "0" ]; then
+            echo "result=success" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=incomplete" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update hash manifest on success
+        if: steps.outcome.outputs.result == 'success'
+        run: node scripts/compute-manual-test-hashes.js update "${{ matrix.file }}"
+
+      - name: Upload Playwright report/trace on non-success
+        if: steps.outcome.outputs.result != 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ strategy.job-index }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+      - name: Upload OTel trace for cost observability
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: otel-trace-${{ strategy.job-index }}
+          path: otel-trace-*.jsonl
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Fail the job on hard-stop (dead-lettered, needs human review)
+        if: steps.outcome.outputs.result == 'hard-stop'
+        run: |
+          echo "::error::${{ matrix.file }} hit the 3-attempt heal cap. Row already written to unresolved-test-failures.csv by scripts/bounded-run.js. See uploaded playwright-report artifact and the CSV in the commit made by the finalize job."
+          exit 1
+
+  finalize:
+    needs: [dedup, generate-and-run]
+    if: always() && needs.dedup.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Commit generated changes and open PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "manual-test-pipeline-bot"
+          git config user.email "actions@github.com"
+
+          BRANCH="manual-test-pipeline/${{ github.run_id }}"
+          git checkout -b "$BRANCH"
+
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Nothing to commit — no files changed on disk (all matrix jobs may have hard-stopped before any code was generated)."
+            exit 0
+          fi
+
+          git add -A
+          git commit -m "Generate Playwright tests from manual-tests/ (run ${{ github.run_id }})"
+          git push origin "$BRANCH"
+
+          if [ "${{ needs.generate-and-run.result }}" = "success" ]; then
+            gh pr create --title "Generated Playwright tests (run ${{ github.run_id }})" \
+              --body "Automated output of the manual-test-to-Playwright pipeline. See docs/pipeline-plan.md for design. The existing playwright.yml suite is the real validation gate for this PR." \
+              --base main --head "$BRANCH"
+          else
+            gh pr create --title "[WIP] Generated Playwright tests — needs human review (run ${{ github.run_id }})" \
+              --body "One or more manual-tests files hit the 3-attempt heal cap. See unresolved-test-failures.csv for details and the uploaded playwright-report/otel-trace artifacts on the generate-and-run job for diagnostics." \
+              --base main --head "$BRANCH" --draft --label needs-human
+          fi

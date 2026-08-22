@@ -1,0 +1,108 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - link [ref=e5] [cursor=pointer]:
+      - /url: /AI-R-D---Github-copilot
+      - img "OneStyle Logo" [ref=e6]
+      - paragraph [ref=e7]: OneStyle
+    - list [ref=e9]:
+      - listitem [ref=e10] [cursor=pointer]:
+        - link "Shop" [ref=e11]:
+          - /url: /AI-R-D---Github-copilot
+        - separator [ref=e12]
+      - listitem [ref=e13] [cursor=pointer]:
+        - link "Men" [ref=e14]:
+          - /url: /AI-R-D---Github-copilot/mens
+      - listitem [ref=e15] [cursor=pointer]:
+        - link "Women" [ref=e16]:
+          - /url: /AI-R-D---Github-copilot/womens
+      - listitem [ref=e17] [cursor=pointer]:
+        - link "Kids" [ref=e18]:
+          - /url: /AI-R-D---Github-copilot/kids
+    - generic [ref=e19]:
+      - link [ref=e400] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/profile
+        - button "Profile" [ref=e401]
+      - link [ref=e402] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/orders
+        - button "My Orders" [ref=e403]
+      - button "Logout" [ref=e404] [cursor=pointer]
+      - link "♡" [ref=e22] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/wishlist
+      - link [ref=e24] [cursor=pointer]:
+        - /url: /AI-R-D---Github-copilot/cart
+        - img "Cart Icon" [ref=e25]
+      - generic [ref=e26]: "0"
+  - generic [ref=e707]:
+    - generic [ref=e708]:
+      - text: HOME
+      - img "Arrow Icon" [ref=e709]
+      - text: SHOP
+      - img "Arrow Icon" [ref=e710]
+      - text: women
+      - img "Arrow Icon" [ref=e711]
+      - text: Casual Striped Blouse with Peplum Hem
+    - generic [ref=e712]:
+      - img "Product" [ref=e714]
+      - generic [ref=e716]:
+        - img "Product" [ref=e717] [cursor=pointer]
+        - img "Product" [ref=e718] [cursor=pointer]
+        - img "Product" [ref=e719] [cursor=pointer]
+      - generic [ref=e720]:
+        - heading "Casual Striped Blouse with Peplum Hem" [level=1] [ref=e721]
+        - generic [ref=e722]:
+          - img "Star" [ref=e723]
+          - img "Star" [ref=e724]
+          - img "Star" [ref=e725]
+          - img "Star" [ref=e726]
+          - img "Star" [ref=e727]
+          - paragraph [ref=e728]: (0 Reviews)
+        - generic [ref=e729]:
+          - generic [ref=e730]: LKR 80.50
+          - generic [ref=e731]: LKR 50.00
+        - paragraph [ref=e733]: A stylish striped blouse featuring flutter sleeves and a peplum hem, perfect for casual outings.
+        - generic [ref=e734]:
+          - heading "Select Size" [level=1] [ref=e735]
+          - generic [ref=e736]:
+            - generic [ref=e737] [cursor=pointer]: S
+            - generic [ref=e738] [cursor=pointer]: M
+            - generic [ref=e739] [cursor=pointer]: L
+            - generic [ref=e740] [cursor=pointer]: XL
+            - generic [ref=e741] [cursor=pointer]: XXL
+        - generic [ref=e742]:
+          - heading "Quantity" [level=1] [ref=e743]
+          - generic [ref=e744]:
+            - button "−" [ref=e745] [cursor=pointer]
+            - generic [ref=e746]: "1"
+            - button "+" [ref=e747] [cursor=pointer]
+        - button "Add to Cart" [ref=e748] [cursor=pointer]
+        - button "Buy Now" [ref=e749] [cursor=pointer]
+        - paragraph [ref=e750]:
+          - generic [ref=e751]: "Category: women"
+        - generic [ref=e752]:
+          - heading "Customer Reviews" [level=2] [ref=e753]
+          - paragraph [ref=e754]: No reviews yet. Be the first!
+          - generic [ref=e755]:
+            - heading "Leave a Review" [level=3] [ref=e756]
+            - generic [ref=e757]:
+              - generic [ref=e758]: "Rating:"
+              - button "★" [ref=e759] [cursor=pointer]
+              - button "★" [ref=e760] [cursor=pointer]
+              - button "★" [ref=e761] [cursor=pointer]
+              - button "★" [ref=e762] [cursor=pointer]
+              - button "★" [ref=e763] [cursor=pointer]
+            - textbox "Write your review (optional)" [ref=e764]
+            - button "Submit Review" [ref=e765] [cursor=pointer]
+  - generic [ref=e69]:
+    - list [ref=e71]:
+      - listitem [ref=e72] [cursor=pointer]: Company
+      - listitem [ref=e73] [cursor=pointer]: Products
+      - listitem [ref=e74] [cursor=pointer]: Offices
+      - listitem [ref=e75] [cursor=pointer]: About
+      - listitem [ref=e76] [cursor=pointer]: Contact
+    - generic [ref=e77]:
+      - generic [ref=e78] [cursor=pointer]
+      - generic [ref=e79] [cursor=pointer]
+      - generic [ref=e80] [cursor=pointer]
+    - generic [ref=e81]:
+      - separator [ref=e82]
+      - paragraph [ref=e83]: Copyright @ 2024 - All Rights Reserved

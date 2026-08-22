@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    
+    /* Path Aliases Configuration */
+    "paths": {
+      "@pages/*": ["./pages/*"],
+      "@dataprovider/*": ["./dataprovider/*"]
+    }
+  },
+  "include": [
+    "**/*.ts", 
+    "**/*.mjs"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

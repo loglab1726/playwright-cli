@@ -1,0 +1,47 @@
+name: Manual Test Lint
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'manual-tests/**.md'
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'manual-tests/**.md'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Determine changed manual-tests files
+        id: changed
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_SHA="${{ github.event.before }}"
+          fi
+
+          if [ -z "$BASE_SHA" ] || ! git cat-file -e "$BASE_SHA" 2>/dev/null; then
+            echo "No usable base SHA (likely first push) — linting all manual-tests files."
+            FILES=$(git ls-files 'manual-tests/*.md')
+          else
+            FILES=$(git diff --name-only --diff-filter=ACMR "$BASE_SHA" HEAD -- 'manual-tests/*.md')
+          fi
+
+          echo "files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$FILES" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Lint changed manual-tests files
+        if: steps.changed.outputs.files != ''
+        run: node scripts/lint-manual-test.js ${{ steps.changed.outputs.files }}
+
+      - name: No manual-tests files changed
+        if: steps.changed.outputs.files == ''
+        run: echo "No manual-tests/*.md files changed in this push/PR — nothing to lint."
