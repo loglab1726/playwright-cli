@@ -1,9 +1,115 @@
 import { expect, test } from './fixtures';
 import { AuthenticationPage } from '@pages/AuthenticationPage';
+import { LandingPage } from '@pages/LandingPage';
 
 test.use({ storageState: { cookies: [], origins: [] } });
 
 test.describe('Authentication', { tag: ['@ui', '@auth'] }, () => {
+  test('landing hero Sign Up button navigates to Sign Up form', { tag: '@smoke' }, async ({ page }) => {
+    const landingPage = new LandingPage(page);
+    await landingPage.initUnauthenticated();
+
+    await expect.poll(() => landingPage.isSignUpButtonVisible(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Sign Up button should be visible',
+    }).toBe(true);
+
+    const authPage = await landingPage.clickSignUpButton();
+
+    await expect.poll(() => authPage.getCurrentUrl(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'URL should redirect to /login',
+    }).toContain('/login');
+
+    await expect.poll(() => authPage.getHeadingText(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Heading should display "Sign Up"',
+    }).toBe('Sign Up');
+
+    await expect.poll(() => authPage.isSignUpFormVisible(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Sign Up form should be visible',
+    }).toBe(true);
+
+    await expect.poll(() => authPage.getAuthToggleParagraphText(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Toggle paragraph should show "Already have an account? Login"',
+    }).toContain('Already have an account? Login');
+
+    await expect.poll(
+      async () => (await authPage.page.getByRole('button', { name: 'Sign Up', exact: true }).count()) > 0,
+      {
+        timeout: 5000,
+        intervals: [250, 500],
+        message: 'Sign Up submit button should be visible',
+      }
+    ).toBe(true);
+
+    await expect.poll(
+      async () => !(await authPage.page.getByRole('button', { name: 'Sign Up', exact: true }).isDisabled()),
+      {
+        timeout: 5000,
+        intervals: [250, 500],
+        message: 'Sign Up submit button should be enabled',
+      }
+    ).toBe(true);
+
+    const yourNameField = await authPage.page.getByRole('textbox', { name: 'Your Name' }).count();
+    const emailField = await authPage.page.getByRole('textbox', { name: 'Email Address' }).count();
+    const mobileField = await authPage.page.getByRole('textbox', { name: 'Mobile Number' }).count();
+    const passwordField = await authPage.page.getByRole('textbox', { name: 'Password', exact: true }).count();
+    const confirmPasswordField = await authPage.page.getByRole('textbox', { name: 'Confirm Password' }).count();
+    const addressField = await authPage.page.getByRole('textbox', { name: 'Address' }).count();
+    const genderDropdown = await authPage.page.getByRole('combobox').count();
+
+    await expect.poll(() => Promise.resolve(yourNameField > 0), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Your Name field should be visible',
+    }).toBe(true);
+
+    await expect.poll(() => Promise.resolve(emailField > 0), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Email Address field should be visible',
+    }).toBe(true);
+
+    await expect.poll(() => Promise.resolve(mobileField > 0), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Mobile Number field should be visible',
+    }).toBe(true);
+
+    await expect.poll(() => Promise.resolve(passwordField > 0), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Password field should be visible',
+    }).toBe(true);
+
+    await expect.poll(() => Promise.resolve(confirmPasswordField > 0), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Confirm Password field should be visible',
+    }).toBe(true);
+
+    await expect.poll(() => Promise.resolve(addressField > 0), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Address field should be visible',
+    }).toBe(true);
+
+    await expect.poll(() => Promise.resolve(genderDropdown > 0), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Gender dropdown should be visible',
+    }).toBe(true);
+  });
+
   test('registers a new account and redirects to home', async ({ open }) => {
     const name = 'Test User';
     const email = `testuser_${Date.now()}@test.com`;
