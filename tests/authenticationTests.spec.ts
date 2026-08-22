@@ -1,5 +1,6 @@
 import { expect, test } from './fixtures';
 import { AuthenticationPage } from '@pages/AuthenticationPage';
+import { LandingPage } from '@pages/LandingPage';
 
 test.use({ storageState: { cookies: [], origins: [] } });
 
@@ -122,5 +123,159 @@ test.describe('Authentication', { tag: ['@ui', '@auth'] }, () => {
       intervals: [250, 500],
       message: 'URL should remain on /login',
     }).toContain('/login');
+  });
+
+  test('landing page hero Sign Up button navigates to Sign Up form', { tag: '@smoke' }, async ({ page }) => {
+    await page.goto('');
+    await page.getByRole('button', { name: 'Sign Up' }).waitFor({
+      state: 'visible',
+      timeout: 5000,
+    });
+
+    await expect.poll(() => page.getByRole('button', { name: 'Sign Up' }).isVisible(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Sign Up button should be visible in hero section',
+    }).toBe(true);
+
+    await page.getByRole('button', { name: 'Sign Up' }).click();
+
+    await expect.poll(() => page.url(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'URL should navigate to /login',
+    }).toContain('/login');
+
+    const authPage = new AuthenticationPage(page);
+    
+    await expect.poll(() => authPage.getHeadingText(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Sign Up form should be displayed (heading reads "Sign Up")',
+    }).toBe('Sign Up');
+
+    await expect.poll(() => authPage.isSignUpFormVisible(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Sign Up form fields should be visible',
+    }).toBe(true);
+
+    const signUpButton = page.getByRole('button', { name: 'Sign Up', exact: true });
+    await expect.poll(async () => (await signUpButton.count()) > 0, {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Sign Up submit button should be present and enabled',
+    }).toBe(true);
+
+    const alreadyHaveAccountText = page.getByText('Already have an account? Login');
+    await expect.poll(async () => (await alreadyHaveAccountText.count()) > 0, {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Already have an account paragraph should be visible',
+    }).toBe(true);
+  });
+
+  test('Sign Up form fields present and correct', async ({ open }) => {
+    const authPage = await open(AuthenticationPage).then((_) => _.ensureSignUpForm());
+
+    await expect.poll(() => authPage.getHeadingText(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Heading should read "Sign Up"',
+    }).toBe('Sign Up');
+
+    await expect.poll(() => authPage.getPlaceholderForField('Your Name'), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Name field placeholder should be "Your Name"',
+    }).toBe('Your Name');
+
+    await expect.poll(() => authPage.getPlaceholderForField('Email Address'), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Email field placeholder should be "Email Address"',
+    }).toBe('Email Address');
+
+    await expect.poll(() => authPage.getPlaceholderForField('Mobile Number'), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Mobile Number placeholder should be "Mobile Number"',
+    }).toBe('Mobile Number');
+
+    await expect.poll(() => authPage.getPlaceholderForField('Password'), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Password placeholder should be "Password"',
+    }).toBe('Password');
+
+    await expect.poll(() => authPage.getPlaceholderForField('Confirm Password'), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Confirm Password placeholder should be "Confirm Password"',
+    }).toBe('Confirm Password');
+
+    await expect.poll(() => authPage.getPlaceholderForField('Address (optional)'), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Address placeholder should be "Address (optional)"',
+    }).toBe('Address (optional)');
+
+    await expect.poll(() => authPage.getSelectedGender(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Default gender should be "Select Gender"',
+    }).toBe('Select Gender');
+
+    await expect.poll(() => authPage.getGenderOptions(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Gender options should be present and correct',
+    }).toEqual(['Select Gender', 'Male', 'Female', 'Other', 'Prefer not to say']);
+
+    await expect.poll(() => authPage.isSignUpButtonEnabled(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Sign Up button should be enabled',
+    }).toBe(true);
+
+    await expect.poll(() => authPage.isSignUpButtonLoading(), {
+      timeout: 3000,
+      intervals: [250, 500],
+      message: 'Sign Up button should not be in loading state',
+    }).toBe(false);
+  });
+
+  test('authenticated user navigating to /login is redirected to home page', { tag: '@smoke' }, async ({ open }) => {
+    const authPage = await open(AuthenticationPage).then((_) => _.navigateToLogin());
+
+    await expect.poll(() => authPage.getCurrentUrl(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'URL should redirect to home page',
+    }).toMatch(/\/AI-R-D---Github-copilot\/?$/);
+
+    await expect.poll(() => authPage.isAuthenticated(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'User should be authenticated (Profile, My Orders, Logout visible)',
+    }).toBe(true);
+
+    await expect.poll(() => authPage.isLoginFormVisible(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Login form should not be displayed',
+    }).toBe(false);
+
+    await expect.poll(() => authPage.isMyOrdersButtonVisible(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'My Orders button should be visible',
+    }).toBe(true);
+
+    await expect.poll(() => authPage.isLogoutButtonVisible(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Logout button should be visible',
+    }).toBe(true);
   });
 });

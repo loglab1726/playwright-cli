@@ -10,6 +10,13 @@ export class LandingPage extends BasePage {
         return this;
     }
 
+    public async initUnauthenticated(): Promise<this> {
+        await this.page.goto('')
+        await this.page.getByRole('button',{name: 'Sign Up'})
+        .waitFor({state: 'visible', timeout: 5000});
+        return this;
+    }
+
     public async clickProfileButton(): Promise<ProfilePage> {
         await this.page.getByRole('button', { name: 'Profile' }).click();
         return new ProfilePage(this.page).init();
@@ -18,5 +25,13 @@ export class LandingPage extends BasePage {
     public async clickMyOrdersButton(): Promise<OrdersPage> {
         await this.page.getByRole('button', { name: 'My Orders' }).click();
         return new OrdersPage(this.page).init();
+    }
+
+    public async clickSignUpButton(): Promise<void> {
+        await this.page.getByRole('button', { name: 'Sign Up' }).click();
+    }
+
+    public async isSignUpButtonVisible(): Promise<boolean> {
+        return (await this.page.getByRole('button', { name: 'Sign Up' }).count()) > 0;
     }
 }
