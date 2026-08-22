@@ -215,7 +215,7 @@ jobs:
             --deny-tool 'read(.env)' \
             --deny-tool 'read(.auth/*)' \
             --no-ask-user \
-            --model claude-sonnet-4.6 \
+            --model auto \
             --max-ai-credits=40 \
             --output-format json -s \
             > "copilot-output-${{ strategy.job-index }}.jsonl"

@@ -114,6 +114,24 @@ that job will need a PAT with `pull-requests: write` instead — swap the
 - Current `--max-ai-credits` cost-per-model figures, to sanity check the `40`
   used in the workflow is a sane ceiling and not either wasteful or too tight
   to let a real 3-attempt heal loop complete.
+- **`--model claude-sonnet-4.6` is not available on this account/plan —
+  fixed, using `--model auto` instead.** Confirmed locally: `copilot -p ...
+  --model claude-sonnet-4.6` fails with `Error: Model "claude-sonnet-4.6"
+  from --model flag is not available.` Several other explicit model names
+  (`claude-sonnet-4.5`, `gpt-5`, `claude-opus-4.6`, `claude-haiku-4.5`) were
+  probed and failed identically — only `--model auto` (let Copilot pick)
+  actually works on this account. Both `manual-test-pipeline.yml` and
+  `scripts/run-manual-test-locally.sh` now use `--model auto`. If your
+  account/plan later supports pinning a specific model, re-check available
+  names with an interactive `copilot` session (`/model`) before hardcoding
+  one again — the CLI's error message doesn't itself list valid options.
+- **`copilot plugins list --json` reports "The plugins command is not
+  available" on this account/CLI version (1.0.80) — this is expected and
+  harmless, not a sign anything is broken.** It reproduces identically in a
+  local, authenticated session, so it isn't caused by a CI-only auth/install
+  gap. The pre-flight step already tolerates this (`|| echo
+  "::warning::..."`) and the job continues normally — don't treat this
+  specific warning as something to fix.
 
 ## 4. Gap found and fixed in `.github/workflows/playwright.yml`
 
