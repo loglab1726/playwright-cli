@@ -226,4 +226,39 @@ path-separator mismatch. It wasn't — the same failure reproduced identically
 on Linux CI with the forward-slash-only pattern, which is what led to finding
 the real cause above.
 
+## 7. Design bug found and fixed: a normal push could only ever dispatch one file, forever
+
+The `dedup` job's `max_files` cap was meant to be a one-time, cautious default
+for an exploratory **manual** `workflow_dispatch` run — see that input's own
+description above: "Default is deliberately conservative (1) — raise it only
+after confirming actual per-file credit cost." But the compute step applied
+the exact same `'1'` fallback unconditionally:
+`${{ github.event.inputs.max_files || '1' }}`. `github.event.inputs` is
+undefined for a plain `push`, so every ordinary push silently inherited that
+same manual-safety default — capping the pipeline to **one file dispatched
+per push, permanently**, regardless of how many `manual-tests/*.md` files
+actually changed.
+
+**Impact:** whichever file sorted first alphabetically among "changed since
+manifest" files won that single slot on *every* run. If that file's
+generated-code PR sat unmerged (its manifest bump never reaching `main`), it
+kept re-winning the slot on every subsequent push forever — so a genuinely
+new manual test file added later (e.g. `TC_AUTH_014`) would never get
+dispatched at all, no matter how many times it was pushed, until every older
+file ahead of it in the backlog was individually merged one PR at a time.
+This is very unintuitive behavior for a pipeline whose whole point is "push a
+new manual test, it gets automated" — a new file's fate shouldn't depend on
+unrelated older files getting merged first.
+
+Fixed by giving `push` events their own default, independent of the
+`workflow_dispatch` input's intentionally-cautious `'1'`:
+`${{ github.event.inputs.max_files || (github.event_name == 'push' && '10' || '1') }}`.
+A manual `workflow_dispatch` run (no explicit override) still defaults to `1`
+for the same first-run cost-confirmation reason as before; a normal push now
+processes up to 10 changed files per run instead of exactly one. Tune the
+`10` as real per-file credit cost becomes clear (see Section 0's "Free-tier
+budget" guidance) — it's a batch-size cap, not a concurrency cap;
+`generate-and-run`'s `max-parallel: 1` still means those files run one at a
+time within that batch.
+
 See `docs/pipeline-plan.md` Section 9 for the full list this was drawn from.

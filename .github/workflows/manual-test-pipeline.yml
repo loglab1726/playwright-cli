@@ -58,7 +58,21 @@ jobs:
       - name: Compute changed manual-tests files (content hash vs. committed manifest)
         id: compute
         env:
-          MAX_FILES: ${{ github.event.inputs.max_files || '1' }}
+          # The workflow_dispatch input's own default of '1' is intentionally
+          # cautious for a manual, exploratory run (see its description
+          # above) — confirm real per-file credit cost before scaling up.
+          # `github.event.inputs` is undefined for a plain push, though, so
+          # without a distinct push default this same '1' silently applied to
+          # EVERY regular push too — capping the pipeline to one file dispatched
+          # per push, forever, regardless of how many manual-tests files
+          # actually changed. That meant any new manual test file added
+          # alongside (or after) one still-unmerged PR would never get picked
+          # up at all, since the older file kept winning the single slot every
+          # run. A normal push should process its whole batch of changed
+          # files, so it gets its own higher default here — tune this number
+          # (and docs/ci-setup.md's cost guidance) as real per-file credit
+          # cost against your account's allowance becomes clear.
+          MAX_FILES: ${{ github.event.inputs.max_files || (github.event_name == 'push' && '10' || '1') }}
         run: |
           CHANGED=$(node scripts/compute-manual-test-hashes.js check)
           echo "Changed files: $CHANGED"
