@@ -4,11 +4,18 @@ name: Manual Test → Playwright Pipeline
 #   push to manual-tests/**.md
 #     -> [dedup]           compute which files actually changed (content hash, not just git diff,
 #                           so a revert-and-reapply doesn't waste a dispatch)
-#     -> [generate-and-run] one job per new/changed file, matrix, max-parallel 3, invokes
+#     -> [generate-and-run] one job per new/changed file, matrix, max-parallel 1, invokes
 #                           `copilot -p ...` headlessly; test execution inside that session goes
-#                           ONLY through scripts/bounded-run.js (Layer A+B, see Section 4)
-#     -> [finalize]         workflow (not the agent) creates the commit/PR; hard-stopped files get
-#                           a draft PR labeled needs-human with the report/trace attached
+#                           ONLY through scripts/bounded-run.js (Layer A+B, see Section 4). This
+#                           job commits and pushes its own output directly to a shared per-run
+#                           branch (manual-test-pipeline/<run_id>) — each matrix job's changes must
+#                           persist before that job's disposable runner is torn down, since nothing
+#                           carries over to another job's VM automatically. The agent itself is
+#                           denied all git write access; only the workflow commits.
+#     -> [finalize]         opens the PR against manual-test-pipeline/<run_id> once, after all
+#                           matrix jobs have had a chance to push to it. Hard-stopped runs get a
+#                           draft PR labeled needs-human with the CSV/report/transcript artifacts
+#                           available for review.
 #     -> the EXISTING .github/workflows/playwright.yml still runs independently on the resulting
 #        PR and is the real pass/fail gate — this workflow's job output is never trusted as final.
 
@@ -30,6 +37,10 @@ on:
           your account's real allowance at github.com/settings/billing.
         required: false
         default: '1'
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   dedup:
@@ -115,9 +126,10 @@ jobs:
       COPILOT_OTEL_FILE_EXPORTER_PATH: ${{ github.workspace }}/otel-trace-${{ strategy.job-index }}.jsonl
       # App-under-test config. playwright.config.ts loads these via dotenv
       # from a local .env file for local runs, but no .env file exists in CI
-      # — these MUST come from repo secrets or every generated test fails on
-      # a missing baseURL/credential, which looks like a real bug but isn't.
-      # See docs/ci-setup.md, "Repo secrets" for the full list.
+      # — these come from repo Variables (not Secrets — confirmed in this
+      # repo's Settings → Secrets and variables → Actions → Variables tab), or
+      # every generated test fails on a missing baseURL/credential, which
+      # looks like a real bug but isn't. See docs/ci-setup.md.
       BASE_URL: ${{ vars.BASE_URL }}
       APP_URL: ${{ vars.APP_URL }}
       EMAIL_ADDRESS: ${{ vars.EMAIL_ADDRESS }}
@@ -125,7 +137,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - name: Checkout or continue this run's working branch
+        run: |
+          # CRITICAL: each matrix job runs on its own disposable VM. Without
+          # this step (and the push step later in this job), any files the
+          # agent writes only exist on that VM and are gone the moment the
+          # job ends — the separate `finalize` job runs on a DIFFERENT VM
+          # with its own fresh checkout and would never see them. This step
+          # + the "Commit and push" step below are what make generated code
+          # actually persist. See docs/pipeline-plan.md and the incident this
+          # fixed: the original version of this workflow ran real generate
+          # jobs successfully but silently discarded all output.
+          git config user.name "manual-test-pipeline-bot"
+          git config user.email "actions@github.com"
+          BRANCH="manual-test-pipeline/${{ github.run_id }}"
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            git fetch origin "$BRANCH"
+            git checkout -B "$BRANCH" "origin/$BRANCH"
+          else
+            git checkout -B "$BRANCH"
+          fi
 
       - uses: actions/setup-node@v4
         with:
@@ -168,11 +201,12 @@ jobs:
           COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
         run: |
           set +e
-          copilot -p "Generate, execute, and bounded-heal a Playwright test for ${{ matrix.file }}. Follow .github/copilot-instructions.md, AGENTS.md, and the pom-conventions + playwright-cli skills exactly. Run tests ONLY via node scripts/bounded-run.js <spec> — never call npx playwright test or npm test directly." \
+          copilot -p "Generate, execute, and bounded-heal a Playwright test for ${{ matrix.file }}. Follow .github/copilot-instructions.md, AGENTS.md, and the pom-conventions + playwright-cli skills exactly. Run tests ONLY via node scripts/bounded-run.js <spec> — never call npx playwright test or npm test directly. Do not run any git commands — the CI workflow commits and pushes your changes after you finish; you only need to write/edit files on disk." \
             --agent playwright-test-generator \
             --allow-tool 'shell(node scripts/bounded-run.js:*)' \
-            --allow-tool 'shell(git:*)' \
-            --deny-tool 'shell(git push)' \
+            --deny-tool 'shell(git add:*)' \
+            --deny-tool 'shell(git commit:*)' \
+            --deny-tool 'shell(git push:*)' \
             --deny-tool 'shell(npx playwright test:*)' \
             --deny-tool 'shell(npm test:*)' \
             --deny-tool 'read(.env)' \
@@ -208,8 +242,34 @@ jobs:
           fi
 
       - name: Update hash manifest on success
+        # Must run BEFORE the commit+push step below — otherwise this file
+        # change would be made on disk but never actually committed/pushed.
         if: steps.outcome.outputs.result == 'success'
         run: node scripts/compute-manual-test-hashes.js update "${{ matrix.file }}"
+
+      - name: Commit and push generated changes
+        # Runs regardless of outcome — a hard-stopped file may still have
+        # produced a partial Page Object or an updated CSV row worth keeping
+        # for human review. This step (not the agent) owns every commit;
+        # see the checkout step above for why this is required at all.
+        if: always()
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No file changes for ${{ matrix.file }} — nothing to commit (agent may have hard-stopped before writing anything, or produced no diff)."
+            exit 0
+          fi
+          git add -A
+          git commit -m "Generate/heal Playwright test for ${{ matrix.file }} (run ${{ github.run_id }}, outcome: ${{ steps.outcome.outputs.result }})"
+          git push origin "manual-test-pipeline/${{ github.run_id }}"
+
+      - name: Upload raw Copilot CLI session transcript
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: copilot-output-${{ strategy.job-index }}
+          path: copilot-output-*.jsonl
+          if-no-files-found: warn
+          retention-days: 30
 
       - name: Upload Playwright report/trace on non-success
         if: steps.outcome.outputs.result != 'success'
@@ -243,24 +303,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Commit generated changes and open PR
+      - name: Open PR for this run's branch, if it has any commits
+        # generate-and-run now commits+pushes its own work directly (see the
+        # "Checkout or continue this run's working branch" and "Commit and
+        # push generated changes" steps in that job) — this job's only
+        # remaining responsibility is opening the PR once, after all matrix
+        # jobs have had a chance to push to the shared run branch.
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git config user.name "manual-test-pipeline-bot"
-          git config user.email "actions@github.com"
-
           BRANCH="manual-test-pipeline/${{ github.run_id }}"
-          git checkout -b "$BRANCH"
 
-          if [ -z "$(git status --porcelain)" ]; then
-            echo "Nothing to commit — no files changed on disk (all matrix jobs may have hard-stopped before any code was generated)."
+          if ! git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            echo "Branch $BRANCH was never pushed — no generate-and-run job committed anything (e.g. every matrix job hard-stopped before writing any file, or produced no diff). Nothing to open a PR for."
             exit 0
           fi
 
-          git add -A
-          git commit -m "Generate Playwright tests from manual-tests/ (run ${{ github.run_id }})"
-          git push origin "$BRANCH"
+          EXISTING_PR=$(gh pr list --head "$BRANCH" --json number --jq '.[0].number' 2>/dev/null || echo "")
+          if [ -n "$EXISTING_PR" ]; then
+            echo "PR #$EXISTING_PR already exists for $BRANCH — nothing further to do."
+            exit 0
+          fi
 
           if [ "${{ needs.generate-and-run.result }}" = "success" ]; then
             gh pr create --title "Generated Playwright tests (run ${{ github.run_id }})" \
@@ -268,6 +331,6 @@ jobs:
               --base main --head "$BRANCH"
           else
             gh pr create --title "[WIP] Generated Playwright tests — needs human review (run ${{ github.run_id }})" \
-              --body "One or more manual-tests files hit the 3-attempt heal cap. See unresolved-test-failures.csv for details and the uploaded playwright-report/otel-trace artifacts on the generate-and-run job for diagnostics." \
+              --body "One or more manual-tests files hit the 3-attempt heal cap, or the generate-and-run job otherwise failed. See unresolved-test-failures.csv on this branch, and the copilot-output/playwright-report/otel-trace artifacts uploaded on the generate-and-run job, for diagnostics." \
               --base main --head "$BRANCH" --draft --label needs-human
           fi

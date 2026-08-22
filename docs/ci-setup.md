@@ -104,17 +104,48 @@ that job will need a PAT with `pull-requests: write` instead — swap the
   used in the workflow is a sane ceiling and not either wasteful or too tight
   to let a real 3-attempt heal loop complete.
 
-## 4. Pre-existing gap found in `.github/workflows/playwright.yml` (not fixed — flagged only)
+## 4. Gap found and fixed in `.github/workflows/playwright.yml`
 
 This file predates the pipeline work and `docs/pipeline-plan.md` explicitly
 says to keep it unchanged as the independent validation gate. While wiring
-the new workflow's secrets, the same gap was found here too: it runs
-`npx playwright test` on every push/PR but never sets `BASE_URL`, `APP_URL`,
-`EMAIL_ADDRESS`, or `PASSWORD` — the same four secrets from Section 1.5
-above. If this workflow has been passing, either the app-under-test tolerates
-a missing baseURL, or this workflow hasn't actually been exercising real
-authenticated flows. Worth checking directly before trusting it as "the real
-gate" per the pipeline design — add the same four secrets to this workflow's
-`env:` if you confirm it needs them.
+the new workflow's app-under-test config, the same gap was found here too: it
+ran `npx playwright test` on every push/PR but never set `BASE_URL`,
+`APP_URL`, `EMAIL_ADDRESS`, or `PASSWORD` — the same four values from Section
+1.5 above. Fixed by adding them to this workflow's `Run Playwright tests`
+step `env:` block.
+
+**Naming correction:** despite the "repo secrets" language in Section 1.5
+above, this repo actually has these four configured as **repository
+Variables** (Settings → Secrets and variables → Actions → Variables tab), not
+Secrets — so both `playwright.yml` and `manual-test-pipeline.yml` read them as
+`vars.BASE_URL` / `vars.APP_URL` / `vars.EMAIL_ADDRESS` / `vars.PASSWORD`, not
+`secrets.*`. If you ever migrate these to real Secrets (recommended for
+`PASSWORD` specifically, since Variables are plaintext and visible to anyone
+with read access to the repo), switch both workflows back to `secrets.*` at
+the same time.
+
+## 5. Known issue found and fixed: generated code wasn't persisting
+
+An earlier version of `manual-test-pipeline.yml` had `generate-and-run` write
+files and (via agent-driven `git commit`) commit them locally, then relied on
+a separate `finalize` job to push. GitHub Actions jobs each run on their own
+disposable VM with no shared filesystem, so `finalize`'s fresh checkout never
+saw anything `generate-and-run` did — the job reported "Successful" (it hit
+an early "nothing to commit" exit) while silently discarding all generated
+code. `generate-and-run` itself would report success too, since it never
+attempted to push in the first place.
+
+Fixed by moving the commit+push into `generate-and-run` itself, against a
+shared per-run branch (`manual-test-pipeline/<run_id>`) that each sequential
+matrix job fetches and continues. The agent no longer has any git write
+access at all (`shell(git add:*)`, `shell(git commit:*)`, `shell(git push:*)`
+are explicitly denied) — only the workflow commits, after inspecting the
+actual on-disk result. `finalize` now only opens the PR once, checking
+whether that branch has anything worth opening a PR for.
+
+If a `generate-and-run` job ever reports success again with no
+corresponding PR appearing, check the job's own logs for the "Commit and
+push generated changes" step first — that's the step whose failure would
+reproduce this exact symptom.
 
 See `docs/pipeline-plan.md` Section 9 for the full list this was drawn from.
