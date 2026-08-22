@@ -11,5 +11,5 @@ node_modules/
 
 # Per-run Copilot CLI pipeline debug output — already uploaded as workflow
 # artifacts by manual-test-pipeline.yml; never worth committing into a branch/PR.
-copilot-output-*.jsonl
+copilot-output-*.log
 otel-trace-*.jsonl
