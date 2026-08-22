@@ -118,10 +118,10 @@ jobs:
       # — these MUST come from repo secrets or every generated test fails on
       # a missing baseURL/credential, which looks like a real bug but isn't.
       # See docs/ci-setup.md, "Repo secrets" for the full list.
-      BASE_URL: ${{ secrets.BASE_URL }}
-      APP_URL: ${{ secrets.APP_URL }}
-      EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
-      PASSWORD: ${{ secrets.PASSWORD }}
+      BASE_URL: ${{ vars.BASE_URL }}
+      APP_URL: ${{ vars.APP_URL }}
+      EMAIL_ADDRESS: ${{ vars.EMAIL_ADDRESS }}
+      PASSWORD: ${{ vars.PASSWORD }}
     steps:
       - uses: actions/checkout@v4
         with:
