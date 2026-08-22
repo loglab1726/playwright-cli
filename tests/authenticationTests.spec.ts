@@ -1,5 +1,6 @@
 import { expect, test } from './fixtures';
 import { AuthenticationPage } from '@pages/AuthenticationPage';
+import { LandingPage } from '@pages/LandingPage';
 
 test.use({ storageState: { cookies: [], origins: [] } });
 
@@ -122,5 +123,55 @@ test.describe('Authentication', { tag: ['@ui', '@auth'] }, () => {
       intervals: [250, 500],
       message: 'URL should remain on /login',
     }).toContain('/login');
+  });
+
+  test('landing page hero Sign Up button navigates to Sign Up form', { tag: '@smoke' }, async ({ page }) => {
+    await page.goto('');
+    await page.getByRole('button', { name: 'Sign Up' }).waitFor({
+      state: 'visible',
+      timeout: 5000,
+    });
+
+    await expect.poll(() => page.getByRole('button', { name: 'Sign Up' }).isVisible(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Sign Up button should be visible in hero section',
+    }).toBe(true);
+
+    await page.getByRole('button', { name: 'Sign Up' }).click();
+
+    await expect.poll(() => page.url(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'URL should navigate to /login',
+    }).toContain('/login');
+
+    const authPage = new AuthenticationPage(page);
+    
+    await expect.poll(() => authPage.getHeadingText(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Sign Up form should be displayed (heading reads "Sign Up")',
+    }).toBe('Sign Up');
+
+    await expect.poll(() => authPage.isSignUpFormVisible(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Sign Up form fields should be visible',
+    }).toBe(true);
+
+    const signUpButton = page.getByRole('button', { name: 'Sign Up', exact: true });
+    await expect.poll(async () => (await signUpButton.count()) > 0, {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Sign Up submit button should be present and enabled',
+    }).toBe(true);
+
+    const alreadyHaveAccountText = page.getByText('Already have an account? Login');
+    await expect.poll(async () => (await alreadyHaveAccountText.count()) > 0, {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Already have an account paragraph should be visible',
+    }).toBe(true);
   });
 });
