@@ -1,5 +1,5 @@
 {
-  "manual-tests/TC_AUTH_001_signup-form-toggle-from-login-page.md": "fd58697cfe5600892d97f7ed4cf07d8ef5d4bb424718a7cb72bcc85d1da690d7",
+  "manual-tests/TC_AUTH_001_signup-form-toggle-from-login-page.md": "41009d5edd1c62039d1043820b1a506962bcabab7f8403b7aca7181275ed6aba",
   "manual-tests/TC_AUTH_004_successful-registration-redirects-to-home.md": "9a8ac8c40061f0b97d1242f9502018d34453fc98f805ef2da22c41bea5ef5f7d",
   "manual-tests/TC_CHECKOUT_017_paypal-form-submission-proceeds-to-success.md": "170bc87a202d32809f3ec98eab9a13c88a24810aaa3747ef491a96c10b7bc339",
   "manual-tests/TC_CHECKOUT_018_wishlisted-item-removed-after-purchase.md": "d80be91e2407ff0b22b6ec3deb60e2194970808462b005d34b6402f31aa3069c",
