@@ -54,11 +54,24 @@ const LOCATOR_CALL = /(getByRole|getByLabel|getByText|getByPlaceholder|getByTest
 const STRICT_MODE_VIOLATION = /strict mode violation/i;
 const TIMEOUT_WORD = /timeout/i;
 const ENVIRONMENT_PATTERNS = /(ECONNREFUSED|ECONNRESET|ETIMEDOUT|EAI_AGAIN|net::ERR_|getaddrinfo|Protocol error|ERR_CONNECTION|ERR_NAME_NOT_RESOLVED|ERR_EMPTY_RESPONSE|NS_ERROR|socket hang up|dns lookup failed|ERR_SSL)/i;
-const EXPECTED_LINE = /^\s*Expected:.+/im;
-const RECEIVED_LINE = /^\s*Received:.+/im;
+// Matches "Expected:" as well as Playwright's per-matcher variants —
+// "Expected pattern:" (toMatch), "Expected substring:" (toContain),
+// "Expected value:"/"Expected array:", etc. Same idea for "Received".
+const EXPECTED_LINE = /^\s*Expected[ \w]*:.+/im;
+const RECEIVED_LINE = /^\s*Received[ \w]*:.+/im;
+// eslint-disable-next-line no-control-regex
+const ANSI_ESCAPE_CODES = /\x1b\[[0-9;]*[a-zA-Z]/g;
 
 function classify(errorText) {
-  const text = String(errorText || '');
+  // Playwright's expect() error formatter embeds real ANSI color escape
+  // codes even in the JSON reporter's captured error text (confirmed against
+  // a real regression-heal run) — e.g. "expect(\x1b[22m\x1b[31mreceived..."
+  // instead of a clean "expect(received)". Left unstripped, these fragment
+  // every regex above mid-token, silently misclassifying real
+  // ASSERTION_MISMATCH failures as NEEDS_REVIEW. The safety guarantee still
+  // held either way (NEEDS_REVIEW never heals either), but the label should
+  // be accurate.
+  const text = String(errorText || '').replace(ANSI_ESCAPE_CODES, '');
 
   // 1. Strongest, least ambiguous signal of a real value comparison — checked
   //    FIRST because expect.poll-based mismatches (this repo has a real one:

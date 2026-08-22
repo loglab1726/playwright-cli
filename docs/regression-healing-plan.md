@@ -173,6 +173,36 @@ history) — applied here from the start rather than rediscovered the hard way:
   `.agent.md` — this is instruction-following, not a structural guarantee,
   so the classify step's upstream filtering remains the real safety net.
 
+## 9. Issue found and fixed on the first real dispatch: ANSI escape codes broke classification
+
+The first real `regression-heal.yml` run (against `authenticationTests.spec.ts`'s
+"authenticated user redirected from login" test — the same known app gap
+identified earlier as TC_AUTH_014) surfaced a real classifier bug: a genuine
+`expect(received).toMatch(expected)` failure — `Expected pattern: /\/AI-R-D---Github-copilot\/?$/`
+vs. `Received string: ".../login"`, a textbook `ASSERTION_MISMATCH` — landed
+in the generic `NEEDS_REVIEW` bucket instead.
+
+Root cause: Playwright's `expect()` error formatter embeds real ANSI color
+escape codes directly into the captured error text, even in the JSON
+reporter's output (e.g. `expect(\x1b[22m\x1b[31mreceived\x1b[39m...` instead
+of a clean `expect(received)`). Left unstripped, those codes fragment
+`VALUE_COMPARISON_MATCHERS`'s token matching mid-string. Separately,
+`toMatch()` failures say `Expected pattern:`/`Received string:`, not the
+exact `Expected:`/`Received:` the original regex required — `toContain`,
+`toEqual`, etc. have their own similar variants.
+
+**The safety guarantee held regardless** — `NEEDS_REVIEW` is, like
+`ASSERTION_MISMATCH`, in the never-auto-heal bucket, so nothing was
+incorrectly healed. This was a labeling-accuracy bug, not a safety bug — but
+worth fixing so the report's classification is actually informative.
+
+Fixed in `scripts/classify-regression-failure.js`: strip ANSI escape codes
+(`/\x1b\[[0-9;]*[a-zA-Z]/g`) before running any classification regex, and
+broadened `EXPECTED_LINE`/`RECEIVED_LINE` to match `Expected <word(s)>:` /
+`Received <word(s)>:` generally, not just the exact literal. Re-verified
+against the real failure text (now correctly `ASSERTION_MISMATCH`) and all
+five original test cases from Section 7 (no regressions).
+
 See `docs/ci-setup.md` for the parallel log on `manual-test-pipeline.yml`,
 and `docs/pipeline-plan.md` Section 5 for the failure-classification concept
 this design extends.
