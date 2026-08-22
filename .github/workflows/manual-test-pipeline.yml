@@ -411,6 +411,16 @@ jobs:
               --body "Automated output of the manual-test-to-Playwright pipeline. See docs/pipeline-plan.md for design. The existing playwright.yml suite is the real validation gate for this PR." \
               --base main --head "$BRANCH"
           else
+            # `gh pr create --label needs-human` fails outright — no PR at all,
+            # even for genuinely good changes from OTHER matrix files in this
+            # same run — if the "needs-human" label doesn't already exist in
+            # the repo. Confirmed directly: this label was never created here,
+            # which silently discarded a run with two successful files (real
+            # generated code) alongside one hard-stopped file, because the
+            # third file's failure took down the whole PR-creation step.
+            # `--force` makes this idempotent: no-op if it already exists,
+            # doesn't fail the step either way.
+            gh label create needs-human --color d73a4a --description "Automated pipeline output that hit the 3-attempt heal cap and needs human review" --force
             gh pr create --title "[WIP] Generated Playwright tests — needs human review (run ${{ github.run_id }})" \
               --body "One or more manual-tests files hit the 3-attempt heal cap, or the generate-and-run job otherwise failed. See unresolved-test-failures.csv on this branch, and the copilot-output/playwright-report/otel-trace artifacts uploaded on the generate-and-run job, for diagnostics." \
               --base main --head "$BRANCH" --draft --label needs-human
