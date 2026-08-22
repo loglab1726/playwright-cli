@@ -39,7 +39,18 @@ that stays unmetered. This matters a lot for this pipeline specifically:
   post-2026-06-01 real costs — treat it as a starting guess, not a
   known-safe number.
 
-## 1. Copilot CLI auth token
+## 1. Copilot CLI install + auth token
+
+**The `copilot` binary is not preinstalled on GitHub-hosted runners.** An
+earlier version of `manual-test-pipeline.yml` had a "Pre-flight — confirm
+skill/agent are discoverable" step that ran `copilot plugins list --json` and
+only printed a `::warning::` on failure (never fails the job), so the missing
+binary went unnoticed: the later `copilot -p ...` step also failed with
+"command not found," was swallowed by that step's `set +e`, and the job still
+reported "Successful" with nothing generated and no PR opened. Fixed by
+adding an explicit `npm install -g @github/copilot` step (requires Node.js
+22+, satisfied by the existing `node-version: lts/*` in this job) before the
+pre-flight check.
 
 Add a repo (or org) secret named `COPILOT_GITHUB_TOKEN`. The workflow reads it
 into the `COPILOT_GITHUB_TOKEN` environment variable for the `copilot -p ...`

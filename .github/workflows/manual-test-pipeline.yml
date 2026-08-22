@@ -170,6 +170,9 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
+      - name: Install GitHub Copilot CLI
+        run: npm install -g @github/copilot
+
       - name: Pre-flight — confirm skill/agent are discoverable
         run: copilot plugins list --json || echo "::warning::copilot plugins list failed or copilot CLI not installed on this runner — see docs/pipeline-plan.md Section 9 item 4 for auth/setup prerequisites."
 
