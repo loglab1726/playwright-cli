@@ -109,6 +109,23 @@ and never trusts an LLM with the stop/go decision:
    `regression-heal-report.md` on that branch. `playwright.yml` re-running on
    the PR remains the real, untouched validation gate either way.
 
+**This never runs automatically.** It is NOT wired to `playwright.yml`, and
+it does NOT trigger on push or PR — `workflow_dispatch` is its only trigger.
+Someone has to go to Actions → "Regression Suite Healing" → Run workflow and
+supply the failed run's commit SHA by hand. This is deliberate: auto-healing
+the regression suite is riskier than the net-new-test pipeline above (a bad
+heal here could mask a real app regression, not just a broken new test), so
+a human decides per-run whether to attempt it at all.
+
+**Even then, the `heal` step only actually runs Copilot if at least one
+failure classifies as `LOCATOR_DRIFT`.** If every failure at that commit is
+`ASSERTION_MISMATCH`/`ENVIRONMENT_ISSUE`/`NEEDS_REVIEW`, `heal` is skipped
+entirely — zero Copilot credits spent — and `finalize` just opens a draft PR
+pointing at `regression-heal-report.md` for human review. To find a case that
+will actually exercise the healer, look for a failure whose error is a
+locator timeout, an action timeout, or a strict-mode violation (multiple
+elements matched) — not a `toBe`/`toEqual` value mismatch.
+
 See **`docs/regression-healing-plan.md`** for the full design and the safety
 reasoning behind the classification boundaries.
 
