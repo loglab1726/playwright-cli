@@ -88,7 +88,9 @@ export class AuthenticationPage extends BasePage {
   }
 
   public async getHeadingText(): Promise<string> {
-    return this.page.getByRole('heading', { level: 1 }).textContent()
+    const authForm = this.page.locator('.loginsignup-container, [data-testid="auth-form"]').first();
+    const heading = authForm.getByRole('heading', { level: 1 });
+    return heading.textContent()
       .then((value) => value?.trim() ?? '');
   }
 
@@ -125,5 +127,22 @@ export class AuthenticationPage extends BasePage {
     } catch {
       return false;
     }
+  }
+
+  public async navigateToLogin(): Promise<this> {
+    await this.page.goto('login');
+    return this;
+  }
+
+  public async isLoginFormVisible(): Promise<boolean> {
+    return (await this.page.getByRole('heading', { name: 'Login' }).count()) > 0;
+  }
+
+  public async isLogoutButtonVisible(): Promise<boolean> {
+    return (await this.page.getByRole('button', { name: 'Logout' }).count()) > 0;
+  }
+
+  public async isMyOrdersButtonVisible(): Promise<boolean> {
+    return (await this.page.getByRole('button', { name: 'My Orders' }).count()) > 0;
   }
 }
