@@ -8,3 +8,8 @@ node_modules/
 /playwright/.auth/
 .env
 .auth/
+
+# Per-run Copilot CLI pipeline debug output — already uploaded as workflow
+# artifacts by manual-test-pipeline.yml; never worth committing into a branch/PR.
+copilot-output-*.jsonl
+otel-trace-*.jsonl
