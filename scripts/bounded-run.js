@@ -13,6 +13,14 @@
  *
  * Usage:
  *   node scripts/bounded-run.js <path-to-spec>
+ *   node scripts/bounded-run.js --csv-path=<file> --state-dir=<dir> <path-to-spec>
+ *
+ * --csv-path/--state-dir let a second, independent pipeline (e.g. the
+ * regression-suite healer) point at its own dead-letter CSV and attempt-state
+ * directory instead of this script's defaults, so two pipelines that may run
+ * concurrently never interleave writes to the same files. Omitting them
+ * preserves the original behavior exactly — the default call site
+ * (manual-test-pipeline.yml) is unaffected.
  *
  * Exit codes:
  *   0 - test run passed. State file cleared.
@@ -35,8 +43,8 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 const MAX_ATTEMPTS = 3;
-const HEALING_STATE_DIR = '.healing-state';
-const UNRESOLVED_CSV = 'unresolved-test-failures.csv';
+const DEFAULT_HEALING_STATE_DIR = '.healing-state';
+const DEFAULT_UNRESOLVED_CSV = 'unresolved-test-failures.csv';
 const CSV_HEADER = 'Timestamp, Test Name, Failing Step/Locator, Error Summary';
 
 function fail(message) {
@@ -44,11 +52,31 @@ function fail(message) {
   process.exit(2);
 }
 
-function specPathToStateFile(specPath) {
+function parseArgs(argv) {
+  let csvPath = DEFAULT_UNRESOLVED_CSV;
+  let stateDir = DEFAULT_HEALING_STATE_DIR;
+  let specPath = null;
+
+  for (const arg of argv) {
+    if (arg.startsWith('--csv-path=')) {
+      csvPath = arg.slice('--csv-path='.length);
+    } else if (arg.startsWith('--state-dir=')) {
+      stateDir = arg.slice('--state-dir='.length);
+    } else if (!arg.startsWith('--')) {
+      specPath = arg;
+    } else {
+      fail(`unrecognized flag: ${arg}`);
+    }
+  }
+
+  return { csvPath, stateDir, specPath };
+}
+
+function specPathToStateFile(specPath, stateDir) {
   // Sanitize the spec path into a flat, filesystem-safe filename so nested
   // directories under tests/ don't collide or require sub-directories here.
   const safeName = specPath.replace(/[\/\\]/g, '_');
-  return path.join(HEALING_STATE_DIR, `${safeName}.json`);
+  return path.join(stateDir, `${safeName}.json`);
 }
 
 function readState(stateFile) {
@@ -102,39 +130,41 @@ function extractErrorSummary(execError) {
   return summary;
 }
 
-function appendUnresolvedCsv(specPath, testName, failingStep, errorSummary) {
+function appendUnresolvedCsv(csvPath, specPath, testName, failingStep, errorSummary) {
   const timestamp = new Date().toISOString();
   const row = [timestamp, testName, failingStep, errorSummary]
     .map((field) => String(field).replace(/,/g, ';'))
     .join(', ');
 
-  const needsHeader = !fs.existsSync(UNRESOLVED_CSV);
+  const needsHeader = !fs.existsSync(csvPath);
   if (needsHeader) {
-    fs.writeFileSync(UNRESOLVED_CSV, CSV_HEADER + '\n');
+    fs.mkdirSync(path.dirname(csvPath) || '.', { recursive: true });
+    fs.writeFileSync(csvPath, CSV_HEADER + '\n');
   }
-  fs.appendFileSync(UNRESOLVED_CSV, row + '\n');
-  console.error(`bounded-run: appended row to ${UNRESOLVED_CSV}`);
+  fs.appendFileSync(csvPath, row + '\n');
+  console.error(`bounded-run: appended row to ${csvPath}`);
 }
 
 function main() {
-  const specPath = process.argv[2];
+  const { csvPath, stateDir, specPath } = parseArgs(process.argv.slice(2));
   if (!specPath) {
-    fail('usage: node scripts/bounded-run.js <path-to-spec>');
+    fail('usage: node scripts/bounded-run.js [--csv-path=<file>] [--state-dir=<dir>] <path-to-spec>');
   }
   if (!fs.existsSync(specPath)) {
     fail(`spec file not found: ${specPath}`);
   }
 
-  const stateFile = specPathToStateFile(specPath);
+  const stateFile = specPathToStateFile(specPath, stateDir);
   const state = readState(stateFile);
 
   if (state.attempts >= MAX_ATTEMPTS) {
     console.error(`HARD STOP: ${specPath} already exhausted ${MAX_ATTEMPTS} heal attempts.`);
     appendUnresolvedCsv(
+      csvPath,
       specPath,
       specPath,
       'attempt-limit-exhausted',
-      `No further heal attempts permitted after ${MAX_ATTEMPTS} tries. See prior CSV rows and .healing-state/ for history.`
+      `No further heal attempts permitted after ${MAX_ATTEMPTS} tries. See prior CSV rows and ${stateDir}/ for history.`
     );
     process.exit(2);
   }
@@ -169,7 +199,7 @@ function main() {
 
     if (state.attempts >= MAX_ATTEMPTS) {
       console.error(`HARD STOP: ${specPath} failed on attempt ${state.attempts}/${MAX_ATTEMPTS}.`);
-      appendUnresolvedCsv(specPath, specPath, 'unknown (see error summary)', errorSummary);
+      appendUnresolvedCsv(csvPath, specPath, specPath, 'unknown (see error summary)', errorSummary);
       process.exit(2);
     }
 

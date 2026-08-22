@@ -18,9 +18,9 @@ tests/auth.setup.ts     Logs in once and saves storage state for all authenticat
 manual-tests/           Markdown manual test cases — trigger source for the generation pipeline
 .playwright-cli/        Offline UI snapshots (YAML) used as a locator reference
 scripts/                Helper scripts (see below)
-docs/                   Pipeline design (pipeline-plan.md) and CI setup checklist (ci-setup.md)
+docs/                   Pipeline design docs — manual-test generation, CI setup log, regression healing
 .github/workflows/      CI workflows (see below)
-.github/agents/         Custom Copilot CLI agent persona for test generation
+.github/agents/         Custom Copilot CLI agent personas (test generation, regression healing)
 .github/skills/         Copilot CLI skills (playwright-cli command reference, POM conventions)
 ```
 
@@ -58,8 +58,9 @@ The `setup` project (`tests/auth.setup.ts`) runs first and logs in once, saving 
 | `playwright.yml` | push/PR to `main`/`master` | Runs the full test suite. This is the real pass/fail gate — it runs independently of the pipeline below and its output is never overridden by it. |
 | `manual-test-lint.yml` | push/PR touching `manual-tests/**.md` | Validates new/changed manual test files have the required sections before spending any AI credits on them. |
 | `manual-test-pipeline.yml` | push touching `manual-tests/**.md`, or manual dispatch | Dispatches the GitHub Copilot CLI to generate, execute, and bounded-self-heal a Playwright spec for each new/changed manual test file, then opens a PR with the result. |
+| `regression-heal.yml` | manual dispatch only (`sha`, optional `spec`) | Re-runs the regression suite at a given commit and attempts a bounded Copilot heal — but ONLY for failures classified as pure locator/element drift. Anything that looks like a real assertion/value mismatch or an environment issue is deliberately never auto-healed; it's surfaced for human review instead. See `docs/regression-healing-plan.md`. |
 
-The generation pipeline is billed against GitHub Copilot AI credits — see `docs/ci-setup.md` ("Free-tier budget") before enabling or re-tuning it.
+Both Copilot-driven pipelines are billed against GitHub Copilot AI credits — see `docs/ci-setup.md` ("Free-tier budget") before enabling or re-tuning either.
 
 ## The manual-test-to-Playwright pipeline
 
@@ -80,14 +81,47 @@ This makes real, billed Copilot CLI requests and writes real files in your worki
 
 See **`docs/pipeline-plan.md`** for the full design rationale and **`docs/ci-setup.md`** for the setup checklist plus a running log of issues found (and fixed) while getting this pipeline working end-to-end — worth reading before assuming a given piece of it already works as designed.
 
+## The regression-suite healing pipeline
+
+`regression-heal.yml` extends the same bounded-heal machinery to the actual
+regression suite — but with a materially different risk posture, since a bad
+heal here could mask a real app regression instead of a broken net-new test.
+It's manual-dispatch-only (pick a failed `playwright.yml` run's commit SHA)
+and never trusts an LLM with the stop/go decision:
+
+1. **Re-runs the suite at that exact commit** — this doubles as a free flake
+   filter (anything that passes on re-run never reaches classification) and
+   produces `playwright-report/results.json` for parsing.
+2. **Classifies every still-failing test deterministically** via
+   `scripts/classify-regression-failure.js` — a pure regex classifier, no
+   model involved. Only failures that look like pure selector/element drift
+   (`LOCATOR_DRIFT`) ever get handed to Copilot. Anything that looks like a
+   real value/assertion mismatch, an environment issue, or anything
+   ambiguous is routed straight to human review — never auto-healed.
+3. **Bounded-heals only the safe ones**, using the `regression-test-healer`
+   agent (a stricter, separate persona from `playwright-test-generator` —
+   see `.github/agents/regression-test-healer.agent.md`) and its own
+   dead-letter CSV/state dir (`unresolved-regression-failures.csv`,
+   `.healing-state-regression/`) so it never interleaves with the manual-test
+   pipeline's.
+4. **Opens a PR** — always draft + `needs-human`-labeled if anything needed
+   review or hard-stopped, with the full expected-vs-actual shown up front in
+   `regression-heal-report.md` on that branch. `playwright.yml` re-running on
+   the PR remains the real, untouched validation gate either way.
+
+See **`docs/regression-healing-plan.md`** for the full design and the safety
+reasoning behind the classification boundaries.
+
 ## Scripts reference
 
 | Script | Purpose |
 |---|---|
-| `scripts/bounded-run.js <spec>` | The only sanctioned way to execute a spec in an automated session — enforces the 3-attempt heal cap and dead-letter logging. |
+| `scripts/bounded-run.js [--csv-path=<file>] [--state-dir=<dir>] <spec>` | The only sanctioned way to execute a spec in an automated session — enforces the 3-attempt heal cap and dead-letter logging. The optional flags let a second pipeline (regression-heal.yml) point at its own CSV/state dir instead of the defaults. |
 | `scripts/compute-manual-test-hashes.js check\|update\|list` | Content-hash manifest management for the dedup CI job. |
 | `scripts/lint-manual-test.js <file...>` | Validates manual test Markdown files have the required sections. |
-| `scripts/run-manual-test-locally.sh <manual-tests/FILE.md>` | Local mirror of the pipeline's generate+heal step, for fast iteration. |
+| `scripts/run-manual-test-locally.sh <manual-tests/FILE.md>` | Local mirror of the manual-test pipeline's generate+heal step, for fast iteration. |
+| `scripts/parse-test-results.js <results.json>` | Flattens Playwright's JSON reporter output into a list of still-failing tests (file, title, error) — used by `regression-heal.yml`. |
+| `scripts/classify-regression-failure.js <failures.json>` \| `--text="<error>"` | The regression-heal pipeline's deterministic, regex-only safety classifier — see `docs/regression-healing-plan.md`. |
 
 ## Conventions
 

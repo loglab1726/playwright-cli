@@ -1,0 +1,396 @@
+name: Regression Suite Healing
+
+# See docs/regression-healing-plan.md for the full design.
+#
+# Pipeline shape:
+#   workflow_dispatch (a human picks a failed playwright.yml run's commit)
+#     -> [classify] re-run the suite at that exact commit (this doubles as a
+#                   free flake-filter), parse+classify every still-failing
+#                   test via scripts/parse-test-results.js and
+#                   scripts/classify-regression-failure.js. ONLY failures
+#                   classified LOCATOR_DRIFT are ever handed to a healer —
+#                   ASSERTION_MISMATCH/ENVIRONMENT_ISSUE/NEEDS_REVIEW always
+#                   go straight to human review, never auto-healed. Seeds a
+#                   shared branch + report with every finding up front.
+#     -> [heal]     one matrix job per healable spec, max-parallel 1, invokes
+#                   `copilot -p ...` with the regression-test-healer agent
+#                   (explicit stop-bias — see its .agent.md). Execution goes
+#                   ONLY through scripts/bounded-run.js, using ITS OWN
+#                   --csv-path/--state-dir so this never interleaves with
+#                   manual-test-pipeline.yml's dead-letter state.
+#     -> [finalize] opens a PR against the shared branch. Always draft +
+#                   needs-human if anything needed review or hard-stopped.
+#     -> playwright.yml re-running on that PR remains the real, untouched
+#        pass/fail gate — this workflow's own judgment is never trusted as
+#        final, same principle as manual-test-pipeline.yml.
+#
+# Deliberately workflow_dispatch-only, not auto-triggered on every
+# playwright.yml failure: healing the regression suite is inherently riskier
+# than healing brand-new tests (manual-test-pipeline.yml) — a bad heal could
+# mask a real app regression instead of a human seeing it. A person looks at
+# a failed run and deliberately opts in to attempting a heal on it.
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'Commit SHA of the failed playwright.yml run to re-run and attempt healing on.'
+        required: true
+      spec:
+        description: 'Optional: scope to one spec file/pattern (e.g. tests/profileTests.spec.ts). Leave blank to run the full suite.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    outputs:
+      has_failures: ${{ steps.classify.outputs.has_failures }}
+      has_healable: ${{ steps.classify.outputs.has_healable }}
+      needs_review_count: ${{ steps.classify.outputs.needs_review_count }}
+      healable: ${{ steps.classify.outputs.healable }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.sha }}
+          fetch-depth: 0
+
+      - name: Create/reset this run's shared branch off the target commit
+        run: |
+          git config user.name "regression-heal-bot"
+          git config user.email "actions@github.com"
+          git checkout -B "regression-heal/${{ github.run_id }}"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps
+
+      - name: Install Playwright OS dependencies only
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps
+
+      # This re-run at the exact failing commit IS the flake filter: anything
+      # that passes here is dropped before classification ever sees it —
+      # same principle as docs/pipeline-plan.md Section 5's "environment
+      # flake -> retry once, no code change", just happening as this
+      # workflow's first step instead of inside the heal loop.
+      - name: Re-run the suite at the target commit (flake filter)
+        id: run_tests
+        continue-on-error: true
+        env:
+          BASE_URL: ${{ vars.BASE_URL }}
+          APP_URL: ${{ vars.APP_URL }}
+          EMAIL_ADDRESS: ${{ vars.EMAIL_ADDRESS }}
+          PASSWORD: ${{ vars.PASSWORD }}
+        run: npx playwright test ${{ github.event.inputs.spec }}
+
+      - name: Parse and classify failures, seed the shared branch + report
+        id: classify
+        run: |
+          if [ ! -f playwright-report/results.json ]; then
+            echo "No results.json produced (playwright test itself failed to run) — treating as zero failures to classify; check the previous step's log." >&2
+            echo "[]" > "$RUNNER_TEMP/classified.json"
+          else
+            node scripts/parse-test-results.js playwright-report/results.json > "$RUNNER_TEMP/failures.json"
+            node scripts/classify-regression-failure.js "$RUNNER_TEMP/failures.json" > "$RUNNER_TEMP/classified.json"
+          fi
+
+          cat > "$RUNNER_TEMP/summarize.js" << 'EOF'
+          const fs = require('fs');
+          const classified = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+
+          const hasFailures = classified.length > 0;
+          const needsReview = classified.filter((f) => f.classification !== 'LOCATOR_DRIFT');
+          const healable = [...new Set(
+            classified.filter((f) => f.classification === 'LOCATOR_DRIFT').map((f) => f.file)
+          )];
+
+          fs.writeFileSync(process.env.GITHUB_OUTPUT, [
+            `has_failures=${hasFailures}`,
+            `has_healable=${healable.length > 0}`,
+            `needs_review_count=${needsReview.length}`,
+            `healable=${JSON.stringify({ file: healable })}`,
+            '',
+          ].join('\n'), { flag: 'a' });
+
+          const lines = ['# Regression healing report', '', `Run: ${process.env.GITHUB_RUN_ID}`, `Target commit: ${process.env.TARGET_SHA}`, ''];
+
+          if (!hasFailures) {
+            lines.push('No failures survived the flake-filter re-run — nothing to report.');
+          } else {
+            if (needsReview.length > 0) {
+              lines.push('## ⚠️ Needs human review (never auto-healed)', '');
+              lines.push('These failures were deliberately NOT handed to the healer — see docs/regression-healing-plan.md for why each category is excluded.', '');
+              for (const f of needsReview) {
+                lines.push(`### \`${f.file}\` — ${f.title}`);
+                lines.push(`**Classification:** ${f.classification}`, '');
+                lines.push('```', f.error, '```', '');
+              }
+            }
+            if (healable.length > 0) {
+              lines.push('## Attempted heals (locator/element drift only)', '');
+              lines.push('Updated below as each spec\'s heal job completes.', '');
+              for (const file of healable) {
+                lines.push(`- \`${file}\`: pending`);
+              }
+            } else {
+              lines.push('## Attempted heals', '', 'None — every failure needed human review.');
+            }
+          }
+
+          fs.writeFileSync('regression-heal-report.md', lines.join('\n') + '\n');
+          EOF
+          TARGET_SHA="${{ github.event.inputs.sha }}" node "$RUNNER_TEMP/summarize.js" "$RUNNER_TEMP/classified.json"
+
+          if [ -n "$(git status --porcelain)" ] || [ "$(cat regression-heal-report.md 2>/dev/null | wc -l)" -gt 0 ]; then
+            git add regression-heal-report.md
+            if ! git diff --cached --quiet; then
+              git commit -m "Seed regression-heal report (run ${{ github.run_id }})"
+              git push origin "regression-heal/${{ github.run_id }}"
+            fi
+          fi
+
+      - name: Upload Playwright report from the flake-filter re-run
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-heal-classify-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+  heal:
+    needs: classify
+    if: needs.classify.outputs.has_healable == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      # Same conservative concurrency as manual-test-pipeline.yml's
+      # generate-and-run — one file's real cost/outcome before the next.
+      max-parallel: 1
+      fail-fast: false
+      matrix: ${{ fromJson(needs.classify.outputs.healable) }}
+    env:
+      COPILOT_OTEL_ENABLED: 'true'
+      COPILOT_OTEL_FILE_EXPORTER_PATH: ${{ github.workspace }}/otel-trace-${{ strategy.job-index }}.jsonl
+      BASE_URL: ${{ vars.BASE_URL }}
+      APP_URL: ${{ vars.APP_URL }}
+      EMAIL_ADDRESS: ${{ vars.EMAIL_ADDRESS }}
+      PASSWORD: ${{ vars.PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Continue this run's shared branch
+        run: |
+          git config user.name "regression-heal-bot"
+          git config user.email "actions@github.com"
+          git fetch origin "regression-heal/${{ github.run_id }}"
+          git checkout -B "regression-heal/${{ github.run_id }}" "origin/regression-heal/${{ github.run_id }}"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps
+
+      - name: Install Playwright OS dependencies only
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps
+
+      - name: Install GitHub Copilot CLI
+        run: npm install -g @github/copilot
+
+      - name: Pre-flight — confirm skill/agent are discoverable
+        run: copilot plugins list --json || echo "::warning::copilot plugins list failed/unavailable — expected on this CLI version/account, see docs/ci-setup.md Section 3."
+
+      - name: Record pre-run regression-CSV row count
+        id: pre_csv
+        run: |
+          if [ -f unresolved-regression-failures.csv ]; then
+            echo "count=$(wc -l < unresolved-regression-failures.csv)" >> "$GITHUB_OUTPUT"
+          else
+            echo "count=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Same allow/deny tool set as manual-test-pipeline.yml's generate-and-run
+      # (bare 'shell'/'write' allow, explicit denies for git write + raw test
+      # runner + .env/.auth reads) — these were hard-won fixes documented in
+      # docs/ci-setup.md Sections 6 and 8; reused verbatim rather than
+      # re-deriving them. --csv-path/--state-dir point bounded-run.js at this
+      # pipeline's OWN dead-letter file/state dir, never the net-new-test
+      # pipeline's, so the two never interleave writes concurrently.
+      - name: Attempt a bounded heal via Copilot CLI (regression-test-healer)
+        id: copilot_run
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+        run: |
+          set +e
+          copilot -p "The spec ${{ matrix.file }} is failing in the regression suite and has already been classified LOCATOR_DRIFT (selector/element-state problem, not a value comparison) by scripts/classify-regression-failure.js — see regression-heal-report.md on this branch for the exact error. Investigate and fix ONLY the locator/element-state issue; you must NEVER change an expect()'s expected value or loosen an assertion — if the real fix would require that, stop and make no change. Follow .github/agents/regression-test-healer.agent.md, AGENTS.md, and the pom-conventions + playwright-cli skills exactly. Run tests ONLY via: node scripts/bounded-run.js --csv-path=unresolved-regression-failures.csv --state-dir=.healing-state-regression ${{ matrix.file }} — never call npx playwright test or npm test directly, and never omit those two flags. Do not run any git commands — the CI workflow commits and pushes your changes after you finish; you only need to write/edit files on disk." \
+            --agent regression-test-healer \
+            --allow-tool 'shell' \
+            --allow-tool 'write' \
+            --deny-tool 'shell(git add:*)' \
+            --deny-tool 'shell(git commit:*)' \
+            --deny-tool 'shell(git push:*)' \
+            --deny-tool 'shell(npx playwright test:*)' \
+            --deny-tool 'shell(npm test:*)' \
+            --deny-tool 'read(.env)' \
+            --deny-tool 'read(.auth/*)' \
+            --no-ask-user \
+            --model auto \
+            --max-ai-credits=40 \
+            | tee "copilot-output-${{ strategy.job-index }}.log"
+          COPILOT_EXIT=${PIPESTATUS[0]}
+          echo "copilot_exit=$COPILOT_EXIT" >> "$GITHUB_OUTPUT"
+          exit 0  # never fail this step directly — the next step interprets the real state
+
+      - name: Determine hard-stop vs. success
+        id: outcome
+        run: |
+          if [ -f unresolved-regression-failures.csv ]; then
+            POST_COUNT=$(wc -l < unresolved-regression-failures.csv)
+          else
+            POST_COUNT=0
+          fi
+          if [ "$POST_COUNT" -gt "${{ steps.pre_csv.outputs.count }}" ]; then
+            echo "result=hard-stop" >> "$GITHUB_OUTPUT"
+          elif [ "${{ steps.copilot_run.outputs.copilot_exit }}" = "0" ]; then
+            echo "result=success" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=incomplete" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Append this spec's outcome to the shared report
+        if: always()
+        run: |
+          {
+            echo "- \`${{ matrix.file }}\`: ${{ steps.outcome.outputs.result }} (heal job ${{ strategy.job-index }}, run ${{ github.run_id }})"
+          } >> regression-heal-report.md
+
+      - name: Commit and push this job's changes
+        if: always()
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No file changes for ${{ matrix.file }} — nothing to commit."
+            exit 0
+          fi
+          git add -A
+          git commit -m "Attempt regression heal for ${{ matrix.file }} (run ${{ github.run_id }}, outcome: ${{ steps.outcome.outputs.result }})"
+          git push origin "regression-heal/${{ github.run_id }}"
+
+      - name: Upload raw Copilot CLI session transcript
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-heal-copilot-output-${{ strategy.job-index }}
+          path: copilot-output-*.log
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload Playwright report/trace on non-success
+        if: steps.outcome.outputs.result != 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-heal-playwright-report-${{ strategy.job-index }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+      - name: Upload OTel trace for cost observability
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-heal-otel-trace-${{ strategy.job-index }}
+          path: otel-trace-*.jsonl
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Fail the job on hard-stop (dead-lettered, needs human review)
+        if: steps.outcome.outputs.result == 'hard-stop'
+        run: |
+          echo "::error::${{ matrix.file }} hit the 3-attempt heal cap. Row already written to unresolved-regression-failures.csv by scripts/bounded-run.js. See regression-heal-report.md on this branch and the uploaded playwright-report artifact."
+          exit 1
+
+  finalize:
+    needs: [classify, heal]
+    if: always() && needs.classify.outputs.has_failures == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Open PR for this run's branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="regression-heal/${{ github.run_id }}"
+
+          if ! git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            echo "Branch $BRANCH was never pushed — classify job must have failed before seeding it. Nothing to open a PR for."
+            exit 0
+          fi
+
+          EXISTING_PR=$(gh pr list --head "$BRANCH" --json number --jq '.[0].number' 2>/dev/null || echo "")
+          if [ -n "$EXISTING_PR" ]; then
+            echo "PR #$EXISTING_PR already exists for $BRANCH — nothing further to do."
+            exit 0
+          fi
+
+          # Draft + needs-human whenever anything needed review OR any heal
+          # attempt hard-stopped/failed — a real regression signal must never
+          # be one click away from merging. 'skipped' means nothing was
+          # healable at all (100% needed review), which is exactly the same
+          # "always draft" case, not a bug.
+          NEEDS_DRAFT="false"
+          if [ "${{ needs.classify.outputs.needs_review_count }}" -gt "0" ] || [ "${{ needs.heal.result }}" = "failure" ] || [ "${{ needs.heal.result }}" = "skipped" ]; then
+            NEEDS_DRAFT="true"
+          fi
+
+          if [ "$NEEDS_DRAFT" = "false" ]; then
+            gh pr create --title "Regression suite healing (run ${{ github.run_id }})" \
+              --body "Automated locator-drift fixes from the regression-heal pipeline — every failing spec at commit ${{ github.event.inputs.sha }} was classified LOCATOR_DRIFT and healed successfully. See regression-heal-report.md on this branch for details. See docs/regression-healing-plan.md for design. playwright.yml re-running on this PR is the real validation gate." \
+              --base main --head "$BRANCH"
+          else
+            # Same idempotent label-creation fix as manual-test-pipeline.yml —
+            # gh pr create --label fails outright (discarding the whole PR,
+            # including any genuinely good heals in the same run) if the
+            # label doesn't already exist.
+            gh label create needs-human --color d73a4a --description "Automated pipeline output that hit the 3-attempt heal cap and needs human review" --force
+            gh pr create --title "[WIP] Regression suite — needs human review (run ${{ github.run_id }})" \
+              --body "At least one failure at commit ${{ github.event.inputs.sha }} was classified as needing human review (a real value/assertion mismatch, an environment issue, or something ambiguous) and was deliberately NOT auto-healed — see the '⚠️ Needs human review' section of regression-heal-report.md on this branch, which shows the full expected-vs-actual for each. Any locator-drift fixes attempted alongside are also on this branch, marked in the same report. See docs/regression-healing-plan.md for design. playwright.yml re-running on this PR is the real validation gate." \
+              --base main --head "$BRANCH" --draft --label needs-human
+          fi

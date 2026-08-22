@@ -16,7 +16,11 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  /* JSON alongside HTML is additive only — playwright.yml's pass/fail is
+   * still exactly `npx playwright test`'s exit code, this just gives
+   * .github/workflows/regression-heal.yml a machine-readable file
+   * (scripts/parse-test-results.js) to find which specs failed. */
+  reporter: [['html'], ['json', { outputFile: 'playwright-report/results.json' }]],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
