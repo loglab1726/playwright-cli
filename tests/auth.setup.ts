@@ -4,6 +4,11 @@ import path from 'path';
 const authFile = path.join(__dirname, '../.auth/user.json');
 
 setup('authenticate', async ({ page }) => {
+  // The backend (onestyle-backend.onrender.com) is on Render's free tier and
+  // can take 30-60s to cold-start after a period of inactivity, so give this
+  // test more room than the default 30s.
+  setup.setTimeout(90_000);
+
   // 1. Navigate to the base URL
   await page.goto(process.env.BASE_URL || '/');
   
@@ -19,7 +24,9 @@ setup('authenticate', async ({ page }) => {
   await page.getByRole('button', { name: 'Login' }).click();
 
   // 5. Await the web-first assertion to ensure login success
-  await expect(page.getByRole('button', { name: 'Profile' })).toBeVisible();
+  // Generous timeout: the backend (onestyle-backend.onrender.com) is on Render's
+  // free tier and can take 30-60s to cold-start after a period of inactivity.
+  await expect(page.getByRole('button', { name: 'Profile' })).toBeVisible({ timeout: 60_000 });
   
   // 6. Save the storage state
   await page.context().storageState({ path: authFile });
