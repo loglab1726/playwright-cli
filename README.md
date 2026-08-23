@@ -137,8 +137,10 @@ reasoning behind the classification boundaries.
 | `scripts/compute-manual-test-hashes.js check\|update\|list` | Content-hash manifest management for the dedup CI job. |
 | `scripts/lint-manual-test.js <file...>` | Validates manual test Markdown files have the required sections. |
 | `scripts/run-manual-test-locally.sh <manual-tests/FILE.md>` | Local mirror of the manual-test pipeline's generate+heal step, for fast iteration. |
+| `scripts/run-manual-test-lint-locally.sh [file...]` | Local mirror of `manual-test-lint.yml`. With no args, lints whatever `manual-tests/*.md` changed vs. `origin/main`; with args, lints exactly those files. |
 | `scripts/parse-test-results.js <results.json>` | Flattens Playwright's JSON reporter output into a list of still-failing tests (file, title, error) — used by `regression-heal.yml`. |
 | `scripts/classify-regression-failure.js <failures.json>` \| `--text="<error>"` | The regression-heal pipeline's deterministic, regex-only safety classifier — see `docs/regression-healing-plan.md`. |
+| `scripts/run-regression-heal-locally.sh [spec-pattern]` | Local mirror of `regression-heal.yml`'s `classify` + `heal` jobs, for fast iteration on the regression-test-healer. |
 
 ## Conventions
 
