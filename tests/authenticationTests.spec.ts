@@ -245,37 +245,41 @@ test.describe('Authentication', { tag: ['@ui', '@auth'] }, () => {
     }).toBe(false);
   });
 
-  test('authenticated user navigating to /login is redirected to home page', { tag: '@smoke' }, async ({ open }) => {
-    const authPage = await open(AuthenticationPage).then((_) => _.navigateToLogin());
+  test.describe('when already authenticated', () => {
+    test.use({ storageState: '.auth/user.json' });
 
-    await expect.poll(() => authPage.getCurrentUrl(), {
-      timeout: 5000,
-      intervals: [250, 500],
-      message: 'URL should redirect to home page',
-    }).toMatch(/\/AI-R-D---Github-copilot\/?$/);
+    test('authenticated user navigating to /login is redirected to home page', { tag: '@smoke' }, async ({ open }) => {
+      const authPage = await open(AuthenticationPage).then((_) => _.navigateToLogin());
 
-    await expect.poll(() => authPage.isAuthenticated(), {
-      timeout: 5000,
-      intervals: [250, 500],
-      message: 'User should be authenticated (Profile, My Orders, Logout visible)',
-    }).toBe(true);
+      await expect.poll(() => authPage.getCurrentUrl(), {
+        timeout: 5000,
+        intervals: [250, 500],
+        message: 'URL should redirect to home page',
+      }).toMatch(/\/AI-R-D---Github-copilot\/?$/);
 
-    await expect.poll(() => authPage.isLoginFormVisible(), {
-      timeout: 5000,
-      intervals: [250, 500],
-      message: 'Login form should not be displayed',
-    }).toBe(false);
+      await expect.poll(() => authPage.isAuthenticated(), {
+        timeout: 5000,
+        intervals: [250, 500],
+        message: 'User should be authenticated (Profile, My Orders, Logout visible)',
+      }).toBe(true);
 
-    await expect.poll(() => authPage.isMyOrdersButtonVisible(), {
-      timeout: 5000,
-      intervals: [250, 500],
-      message: 'My Orders button should be visible',
-    }).toBe(true);
+      await expect.poll(() => authPage.isLoginFormVisible(), {
+        timeout: 5000,
+        intervals: [250, 500],
+        message: 'Login form should not be displayed',
+      }).toBe(false);
 
-    await expect.poll(() => authPage.isLogoutButtonVisible(), {
-      timeout: 5000,
-      intervals: [250, 500],
-      message: 'Logout button should be visible',
-    }).toBe(true);
+      await expect.poll(() => authPage.isMyOrdersButtonVisible(), {
+        timeout: 5000,
+        intervals: [250, 500],
+        message: 'My Orders button should be visible',
+      }).toBe(true);
+
+      await expect.poll(() => authPage.isLogoutButtonVisible(), {
+        timeout: 5000,
+        intervals: [250, 500],
+        message: 'Logout button should be visible',
+      }).toBe(true);
+    });
   });
 });

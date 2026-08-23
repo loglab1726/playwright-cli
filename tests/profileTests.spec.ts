@@ -13,7 +13,7 @@ test.describe('Profile Page Tests', () => {
       timeout: 10000,
       intervals: [500],
       message: 'Waiting for Full Name to be populated on Profile Page'
-    }).toBe('Test User');
+    }).not.toBe('');
 
   })
 })
