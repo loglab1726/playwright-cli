@@ -1,0 +1,16 @@
+{
+  "persona": "playwright-test-generator",
+  "promptTemplate": "Generate, execute, and bounded-heal a Playwright test for {{SPEC_FILE}}. Follow .github/copilot-instructions.md, AGENTS.md, and the pom-conventions + playwright-cli skills exactly. Run tests ONLY via node scripts/bounded-run.js <spec> — never call npx playwright test or npm test directly.",
+  "tools": {
+    "shell": {
+      "allow": true,
+      "deny": ["git add", "git commit", "git push", "npx playwright test", "npm test"]
+    },
+    "write": { "allow": true },
+    "read": { "deny": [".env", ".auth/*"] }
+  },
+  "backends": {
+    "copilot": { "model": "auto", "maxCredits": 40 },
+    "claudeCode": { "model": "sonnet", "maxBudgetUsd": null }
+  }
+}

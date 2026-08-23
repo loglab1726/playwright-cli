@@ -57,6 +57,14 @@ For you, the act of "generation" is NEVER complete until the test has been execu
    `[HEAL ATTEMPT X/3]`. Its exit code is authoritative: `1` means attempts
    remain, `2` means hard-stopped. If you see exit code `2`, you MUST NOT
    attempt another fix or run, even if you believe you've found the cause.
+   **The cap is per spec FILE, not per test** — if you appended a brand new
+   test into an existing shared spec file, an exit-code-2 hard stop can be
+   entirely pre-existing history from a different, unrelated test in that
+   same file (run `node scripts/check-healing-state.js` to see current
+   counters before you start, or check the CSV/`.healing-state/` history
+   after a surprise hard stop). This is not a sign your new test is broken —
+   it means the file's shared budget was already spent. Report it plainly
+   and stop; do not touch `.healing-state/` yourself.
 4. **CSV Logging is automatic**: on hard stop, the wrapper appends the row to
    `unresolved-test-failures.csv` itself. Do not write a second row. After a
    hard stop, terminate and report the failure to the user.

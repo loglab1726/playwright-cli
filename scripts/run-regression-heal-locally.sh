@@ -7,8 +7,15 @@
 # `finalize`). Lets you iterate on the regression-test-healer's bounded heal
 # without a workflow_dispatch/CI-wait/log-read cycle.
 #
+# Runs the heal step through the CLI-agnostic adapter in
+# scripts/lib/adapters/, so the same task descriptor
+# (scripts/lib/tasks/regression-heal.json) can execute against either the
+# GitHub Copilot CLI (default — matches the production workflow) or the
+# Claude Code CLI. See docs/claude-code-adapter.md for what was verified
+# (not guessed) about the Claude Code backend's agent/permission semantics.
+#
 # Usage:
-#   ./scripts/run-regression-heal-locally.sh [spec-pattern]
+#   ./scripts/run-regression-heal-locally.sh [spec-pattern] [--cli copilot|claude-code]
 #
 #     spec-pattern  Optional, forwarded to `npx playwright test <pattern>`
 #                   for the flake-filter re-run — same as the workflow's
@@ -21,31 +28,51 @@
 # after), same as you'd do to investigate any other failure locally.
 #
 # Prerequisites (same as scripts/run-manual-test-locally.sh):
-#   - `copilot` CLI installed and authenticated (`copilot login`).
+#   - Copilot backend (default): `copilot` CLI installed and authenticated
+#     (`copilot login`).
+#   - Claude Code backend: `claude` CLI installed and authenticated.
 #   - A local .env with BASE_URL/APP_URL/EMAIL_ADDRESS/PASSWORD — loaded
 #     automatically by playwright.config.ts via dotenv.
 #
 # This re-runs the Playwright suite locally, then makes one real, billed
-# Copilot CLI request per spec classified LOCATOR_DRIFT — same cost profile
-# as the CI job (see docs/ci-setup.md, "Free-tier budget"). It writes/
-# modifies real files in your working tree (Page Object locators) and, via
-# scripts/bounded-run.js, its own unresolved-regression-failures.csv /
-# .healing-state-regression (kept separate from manual-test-pipeline's dead-
-# letter files, same as CI). Nothing is committed, pushed, or turned into a
-# PR — review with `git status` / `git diff` afterward and discard with
+# agent request per spec classified LOCATOR_DRIFT — same cost profile as the
+# CI job for the Copilot backend (see docs/ci-setup.md, "Free-tier budget");
+# the Claude Code backend has no equivalent validated cost figure yet, so
+# backends.claudeCode.maxBudgetUsd in the task JSON is left unset — tune it
+# before relying on this unattended. It writes/modifies real files in your
+# working tree (Page Object locators) and, via scripts/bounded-run.js, its
+# own unresolved-regression-failures.csv / .healing-state-regression (kept
+# separate from manual-test-pipeline's dead-letter files, same as CI).
+# Nothing is committed, pushed, or turned into a PR — review with
+# `git status` / `git diff` afterward and discard with
 # `git checkout -- <file>` if you don't want to keep the result.
 
 set -euo pipefail
 
-SPEC_PATTERN="${1:-}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/lib/adapters/dispatch.sh"
 
-if ! command -v copilot >/dev/null 2>&1; then
-  echo "copilot CLI not found on PATH. Install with: npm install -g @github/copilot" >&2
-  exit 1
-fi
+SPEC_PATTERN=""
+CLI="${AGENT_CLI:-copilot}"
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --cli)
+      CLI="$2"
+      shift 2
+      ;;
+    *)
+      SPEC_PATTERN="$1"
+      shift
+      ;;
+  esac
+done
 
 TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT
+
+echo "== Attempt-cap check (scripts/bounded-run.js caps per SPEC FILE, not per test — see docs) =="
+node "$SCRIPT_DIR/check-healing-state.js" .healing-state-regression
+echo
 
 echo "== Re-running the suite (flake filter) ${SPEC_PATTERN:+for: $SPEC_PATTERN}=="
 set +e
@@ -110,27 +137,15 @@ for SPEC_FILE in "${HEALABLE_FILES[@]}"; do
     PRE_COUNT=$(wc -l < unresolved-regression-failures.csv)
   fi
 
-  # Same prompt/allow-deny tool set as regression-heal.yml's `heal` job —
-  # see its comments for why bare 'shell'/'write' allow plus these explicit
-  # denies is what actually works with the Copilot CLI's permission matching.
-  # --csv-path/--state-dir keep this pipeline's dead-letter state separate
-  # from scripts/run-manual-test-locally.sh's.
+  # Task descriptor + tool policy live in scripts/lib/tasks/regression-heal.json
+  # and are shared across backends — see scripts/lib/adapters/ (dispatch.sh,
+  # copilot.sh, claude-code.sh) and docs/claude-code-adapter.md for what's
+  # verified per backend. --csv-path/--state-dir (baked into the prompt
+  # template) keep this pipeline's dead-letter state separate from
+  # scripts/run-manual-test-locally.sh's.
   set +e
-  copilot -p "The spec ${SPEC_FILE} is failing in the regression suite and has already been classified LOCATOR_DRIFT (selector/element-state problem, not a value comparison) by scripts/classify-regression-failure.js. Investigate and fix ONLY the locator/element-state issue; you must NEVER change an expect()'s expected value or loosen an assertion — if the real fix would require that, stop and make no change. Follow .github/agents/regression-test-healer.agent.md, AGENTS.md, and the pom-conventions + playwright-cli skills exactly. Run tests ONLY via: node scripts/bounded-run.js --csv-path=unresolved-regression-failures.csv --state-dir=.healing-state-regression ${SPEC_FILE} — never call npx playwright test or npm test directly, and never omit those two flags." \
-    --agent regression-test-healer \
-    --allow-tool 'shell' \
-    --allow-tool 'write' \
-    --deny-tool 'shell(git add:*)' \
-    --deny-tool 'shell(git commit:*)' \
-    --deny-tool 'shell(git push:*)' \
-    --deny-tool 'shell(npx playwright test:*)' \
-    --deny-tool 'shell(npm test:*)' \
-    --deny-tool 'read(.env)' \
-    --deny-tool 'read(.auth/*)' \
-    --no-ask-user \
-    --model auto \
-    --max-ai-credits=40
-  COPILOT_EXIT=$?
+  run_agent_task "$SCRIPT_DIR/lib/tasks/regression-heal.json" "agent-output-regression-heal-local.log" "$CLI" "SPEC_FILE=$SPEC_FILE"
+  AGENT_EXIT=$?
   set -e
 
   POST_COUNT=0
@@ -140,10 +155,10 @@ for SPEC_FILE in "${HEALABLE_FILES[@]}"; do
 
   if [ "$POST_COUNT" -gt "$PRE_COUNT" ]; then
     echo "-> $SPEC_FILE: hard-stop (hit the 3-attempt heal cap — row added to unresolved-regression-failures.csv)"
-  elif [ "$COPILOT_EXIT" -eq 0 ]; then
+  elif [ "$AGENT_EXIT" -eq 0 ]; then
     echo "-> $SPEC_FILE: success"
   else
-    echo "-> $SPEC_FILE: incomplete (copilot exited $COPILOT_EXIT)"
+    echo "-> $SPEC_FILE: incomplete ($CLI exited $AGENT_EXIT)"
   fi
 done
 

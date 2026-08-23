@@ -133,6 +133,18 @@ that job will need a PAT with `pull-requests: write` instead — swap the
   "::warning::..."`) and the job continues normally — don't treat this
   specific warning as something to fix.
 
+## 3.5 `--max-ai-credits` now has an enforced floor of 30
+
+Found while testing `scripts/lib/adapters/copilot.sh` (the adapter refactor
+in `docs/claude-code-adapter.md`): `copilot -p ... --max-ai-credits=5` now
+fails outright — `error: option '--max-ai-credits <credits>' argument '5' is
+invalid. Invalid value for --max-ai-credits: "5". Use at least 30 AI
+credits.` This wasn't previously documented here. It doesn't change anything
+operationally (the workflow's and local scripts' existing `--max-ai-credits=40`
+is already above the floor), but explains why a smaller value can't be used
+to save cost on a cheap/small task, and is worth knowing if you ever try to
+tune this number down.
+
 ## 4. Gap found and fixed in `.github/workflows/playwright.yml`
 
 This file predates the pipeline work and `docs/pipeline-plan.md` explicitly
