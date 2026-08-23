@@ -1,0 +1,562 @@
+<title>Bounded Healing Architecture</title>
+<style>
+  :root {
+    --bg: #f1f3f1;
+    --surface: #ffffff;
+    --surface-2: #e7eae6;
+    --ink: #161a17;
+    --ink-muted: #55605a;
+    --line: #cfd5cf;
+    --mono-bg: #e9ece8;
+    --flow: #0d7a6e;     /* teal — safe / proceed */
+    --flow-soft: #d7ede9;
+    --gate: #9a5b00;      /* amber — caution / gate */
+    --gate-soft: #f5e6cc;
+    --stop: #a33326;      /* vermilion — never-heal / hard stop */
+    --stop-soft: #f6ded9;
+    --shadow: 0 1px 2px rgba(20, 24, 20, 0.06), 0 8px 24px rgba(20, 24, 20, 0.05);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10130f;
+      --surface: #181d18;
+      --surface-2: #1f251f;
+      --ink: #e7ece6;
+      --ink-muted: #9aa59c;
+      --line: #313a31;
+      --mono-bg: #1c2320;
+      --flow: #5fd9c8;
+      --flow-soft: #163430;
+      --gate: #f0b74a;
+      --gate-soft: #3a2c10;
+      --stop: #ee7a67;
+      --stop-soft: #3a1e18;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #10130f;
+    --surface: #181d18;
+    --surface-2: #1f251f;
+    --ink: #e7ece6;
+    --ink-muted: #9aa59c;
+    --line: #313a31;
+    --mono-bg: #1c2320;
+    --flow: #5fd9c8;
+    --flow-soft: #163430;
+    --gate: #f0b74a;
+    --gate-soft: #3a2c10;
+    --stop: #ee7a67;
+    --stop-soft: #3a1e18;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.55;
+    margin: 0;
+    padding: 3.5rem 1.5rem 6rem;
+  }
+
+  .page {
+    max-width: 860px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 3.25rem;
+  }
+
+  .wide { max-width: 1040px; margin-left: auto; margin-right: auto; width: 100%; }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--flow);
+    margin: 0 0 0.6rem;
+  }
+
+  h1 {
+    font-size: clamp(2.1rem, 4vw, 2.7rem);
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    margin: 0 0 0.9rem;
+    text-wrap: balance;
+    font-weight: 700;
+  }
+
+  .dek {
+    font-size: 1.08rem;
+    color: var(--ink-muted);
+    max-width: 62ch;
+    margin: 0;
+  }
+
+  header {
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 2rem;
+  }
+
+  h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: -0.005em;
+    margin: 0 0 0.3rem;
+    text-wrap: balance;
+  }
+
+  .section-head { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 1.4rem; }
+
+  .section-note {
+    color: var(--ink-muted);
+    font-size: 0.98rem;
+    max-width: 68ch;
+    margin: 0;
+  }
+
+  p { max-width: 68ch; margin: 0 0 0.9rem; }
+  p:last-child { margin-bottom: 0; }
+
+  code, .mono {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.86em;
+  }
+
+  code {
+    background: var(--mono-bg);
+    padding: 0.12em 0.4em;
+    border-radius: 4px;
+  }
+
+  figure {
+    margin: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 1.4rem 1.2rem 1.1rem;
+    box-shadow: var(--shadow);
+  }
+
+  .diagram-scroll { overflow-x: auto; }
+
+  figure svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto;
+  }
+
+  figcaption {
+    font-size: 0.88rem;
+    color: var(--ink-muted);
+    margin-top: 0.9rem;
+    padding-top: 0.8rem;
+    border-top: 1px dashed var(--line);
+  }
+
+  figcaption strong { color: var(--ink); font-weight: 600; }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.3rem;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.76rem;
+    color: var(--ink-muted);
+    margin-bottom: 1rem;
+  }
+
+  .legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .swatch { width: 0.7rem; height: 0.7rem; border-radius: 2px; display: inline-block; }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    padding: 0.18em 0.55em;
+    border-radius: 5px;
+  }
+
+  .tag.flow { background: var(--flow-soft); color: var(--flow); }
+  .tag.gate { background: var(--gate-soft); color: var(--gate); }
+  .tag.stop { background: var(--stop-soft); color: var(--stop); }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.9rem;
+    margin-top: 1.2rem;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+  }
+
+  .card h3 {
+    font-size: 0.95rem;
+    margin: 0 0 0.4rem;
+    font-weight: 600;
+  }
+
+  .card p { font-size: 0.88rem; color: var(--ink-muted); margin: 0; max-width: none; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 0.55rem 0.8rem;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+
+  th {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    font-weight: 600;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 0.3rem 1rem;
+  }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding-top: 1.5rem;
+    color: var(--ink-muted);
+    font-size: 0.85rem;
+  }
+
+  .arrow-label { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11px; }
+</style>
+
+<div class="page">
+
+  <header>
+    <p class="eyebrow">playwright-cli-demo · CI architecture</p>
+    <h1>Bounded Healing Architecture</h1>
+    <p class="dek">Two Copilot-CLI pipelines generate and repair Playwright tests automatically — one for brand-new coverage, one for the regression suite. Neither can ever bypass the one gate that decides what actually merges.</p>
+  </header>
+
+  <section>
+    <div class="section-head">
+      <p class="eyebrow">01 — System map</p>
+      <h2>One gate, two automated pipelines feeding it</h2>
+      <p class="section-note"><code>playwright.yml</code> is the only thing that decides pass/fail. Both pipelines below only ever produce a PR for a human to merge — the gate re-runs on that PR independently, so nothing either pipeline does can change what "passing" means.</p>
+    </div>
+    <div class="wide">
+      <figure>
+        <div class="diagram-scroll">
+          <svg viewBox="0 0 980 300" role="img" aria-label="System map: manual-test-pipeline and regression-heal both produce pull requests that merge into main, and every push to main — including those merges — is validated by the untouched playwright.yml gate.">
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+              </marker>
+            </defs>
+            <style>
+              text { font-family: 'IBM Plex Mono', ui-monospace, monospace; fill: currentColor; }
+              .lbl { font-size: 12px; }
+              .sub { font-size: 10.5px; opacity: 0.65; }
+              .box { fill: none; stroke: currentColor; stroke-width: 1.4; }
+              .flowline { stroke: var(--flow); stroke-width: 1.6; fill: none; marker-end: url(#arrow); }
+              .neutralline { stroke: currentColor; stroke-width: 1.2; fill: none; marker-end: url(#arrow); opacity: 0.7; }
+            </style>
+
+            <rect x="20" y="30" width="230" height="64" rx="8" class="box"/>
+            <text x="135" y="56" text-anchor="middle" class="lbl">manual-tests/*.md</text>
+            <text x="135" y="74" text-anchor="middle" class="sub">new manual test case added</text>
+
+            <rect x="20" y="196" width="230" height="64" rx="8" class="box"/>
+            <text x="135" y="222" text-anchor="middle" class="lbl">failed playwright.yml run</text>
+            <text x="135" y="240" text-anchor="middle" class="sub">human picks a commit SHA</text>
+
+            <rect x="365" y="30" width="250" height="64" rx="8" class="box" stroke="var(--flow)"/>
+            <text x="490" y="56" text-anchor="middle" class="lbl" fill="var(--flow)">manual-test-pipeline.yml</text>
+            <text x="490" y="74" text-anchor="middle" class="sub">generate + heal new coverage</text>
+
+            <rect x="365" y="196" width="250" height="64" rx="8" class="box" stroke="var(--flow)"/>
+            <text x="490" y="222" text-anchor="middle" class="lbl" fill="var(--flow)">regression-heal.yml</text>
+            <text x="490" y="240" text-anchor="middle" class="sub">classify + bounded-heal drift</text>
+
+            <rect x="720" y="112" width="230" height="64" rx="8" class="box" stroke-width="2"/>
+            <text x="835" y="138" text-anchor="middle" class="lbl">Pull Request</text>
+            <text x="835" y="156" text-anchor="middle" class="sub">draft + needs-human, or plain</text>
+
+            <line x1="250" y1="62" x2="365" y2="62" class="flowline"/>
+            <line x1="250" y1="228" x2="365" y2="228" class="flowline"/>
+            <path d="M615,70 C 690,90 720,110 730,120" class="flowline"/>
+            <path d="M615,220 C 690,200 720,180 730,168" class="flowline"/>
+
+            <rect x="365" y="112" width="1" height="1" opacity="0"/>
+            <text x="308" y="52" text-anchor="middle" class="sub arrow-label">push</text>
+            <text x="308" y="218" text-anchor="middle" class="sub arrow-label">dispatch</text>
+
+            <rect x="720" y="230" width="230" height="52" rx="8" class="box" stroke="var(--gate)" stroke-width="2"/>
+            <text x="835" y="252" text-anchor="middle" class="lbl" fill="var(--gate)">playwright.yml</text>
+            <text x="835" y="268" text-anchor="middle" class="sub">the untouched gate — every push/PR</text>
+
+            <path d="M835,176 L835,230" class="neutralline"/>
+            <text x="865" y="206" class="sub arrow-label">merge →</text>
+            <text x="865" y="218" class="sub arrow-label">re-runs</text>
+
+            <path d="M950,258 C 970,258 975,20 950,20 C 930,20 900,20 260,20" class="neutralline" stroke-dasharray="2 4" opacity="0.5"/>
+            <text x="600" y="14" text-anchor="middle" class="sub" opacity="0.55">gate also runs independently on every ordinary push/PR</text>
+          </svg>
+        </div>
+        <figcaption><strong>What this shows:</strong> the two automated pipelines never merge anything themselves and never touch what "passing" means — they only produce a PR, and <code>playwright.yml</code> re-validates it like any other change.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <p class="eyebrow">02 — Net-new coverage</p>
+      <h2><code style="background:none;padding:0;">manual-test-pipeline.yml</code></h2>
+      <p class="section-note">Safe to heal aggressively — nothing real depends on a test that doesn't exist yet. Every new/changed manual test file gets its own Copilot session, sequentially.</p>
+    </div>
+    <div class="wide">
+      <figure>
+        <div class="diagram-scroll">
+          <svg viewBox="0 0 980 190" role="img" aria-label="dedup computes changed manual test files, generate-and-run dispatches one Copilot session per file using the playwright-test-generator agent and bounded-run.js, finalize opens one PR for the whole batch.">
+            <defs>
+              <marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+              </marker>
+            </defs>
+            <style>
+              text { font-family: 'IBM Plex Mono', ui-monospace, monospace; fill: currentColor; }
+              .lbl { font-size: 12px; }
+              .sub { font-size: 10px; opacity: 0.65; }
+              .box { fill: none; stroke: currentColor; stroke-width: 1.4; }
+              .fl { stroke: currentColor; stroke-width: 1.3; fill: none; marker-end: url(#arrow2); opacity: 0.75; }
+            </style>
+
+            <rect x="20" y="55" width="150" height="70" rx="8" class="box"/>
+            <text x="95" y="84" text-anchor="middle" class="lbl">dedup</text>
+            <text x="95" y="100" text-anchor="middle" class="sub">hash vs manifest</text>
+
+            <rect x="220" y="20" width="500" height="140" rx="10" class="box" stroke-dasharray="3 3" opacity="0.7"/>
+            <text x="470" y="38" text-anchor="middle" class="sub" opacity="0.8">generate-and-run — matrix, one job per file, max-parallel 1</text>
+
+            <rect x="245" y="55" width="200" height="80" rx="8" class="box"/>
+            <text x="345" y="80" text-anchor="middle" class="lbl">Copilot CLI</text>
+            <text x="345" y="96" text-anchor="middle" class="sub">playwright-test-generator</text>
+            <text x="345" y="110" text-anchor="middle" class="sub">writes Page Object + spec</text>
+
+            <rect x="475" y="55" width="220" height="80" rx="8" class="box" stroke="var(--flow)"/>
+            <text x="585" y="80" text-anchor="middle" class="lbl" fill="var(--flow)">bounded-run.js</text>
+            <text x="585" y="96" text-anchor="middle" class="sub">3-attempt cap, own state</text>
+            <text x="585" y="110" text-anchor="middle" class="sub">unresolved-test-failures.csv</text>
+
+            <rect x="790" y="55" width="170" height="70" rx="8" class="box" stroke-width="2"/>
+            <text x="875" y="84" text-anchor="middle" class="lbl">finalize</text>
+            <text x="875" y="100" text-anchor="middle" class="sub">one PR for the batch</text>
+
+            <line x1="170" y1="90" x2="220" y2="90" class="fl"/>
+            <line x1="445" y1="95" x2="475" y2="95" class="fl"/>
+            <text x="460" y="70" text-anchor="middle" class="sub arrow-label">executes via</text>
+            <line x1="720" y1="90" x2="790" y2="90" class="fl"/>
+          </svg>
+        </div>
+        <figcaption><strong>What this shows:</strong> execution never runs the agent's own shell command directly — every test run goes through <code>bounded-run.js</code>, which owns the durable, on-disk attempt counter regardless of what the agent believes it did.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <p class="eyebrow">03 — Regression suite · the safety gate</p>
+      <h2><code style="background:none;padding:0;">regression-heal.yml</code></h2>
+      <p class="section-note">Riskier: a bad heal here could silently mask a real app regression instead of fixing a broken new test. The classifier decides before any Copilot session for that spec exists — and two of its three outcomes never reach the healer at all.</p>
+    </div>
+    <div class="legend">
+      <span><span class="swatch" style="background:var(--flow)"></span>LOCATOR_DRIFT — may heal</span>
+      <span><span class="swatch" style="background:var(--stop)"></span>ASSERTION_MISMATCH — never healed</span>
+      <span><span class="swatch" style="background:var(--gate)"></span>ENVIRONMENT_ISSUE / NEEDS_REVIEW — never healed</span>
+    </div>
+    <div class="wide">
+      <figure>
+        <div class="diagram-scroll">
+          <svg viewBox="0 0 1000 360" role="img" aria-label="classify re-runs the suite as a flake filter, then classifies each failure. Only LOCATOR_DRIFT proceeds to the heal job with the regression-test-healer agent; ASSERTION_MISMATCH, ENVIRONMENT_ISSUE, and NEEDS_REVIEW bypass the healer entirely and go straight into the report. Both paths converge at finalize, which opens a draft PR labeled needs-human whenever the review path was used.">
+            <defs>
+              <marker id="arrow3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+              </marker>
+            </defs>
+            <style>
+              text { font-family: 'IBM Plex Mono', ui-monospace, monospace; fill: currentColor; }
+              .lbl { font-size: 12px; }
+              .sub { font-size: 10px; opacity: 0.65; }
+              .box { fill: none; stroke: currentColor; stroke-width: 1.4; }
+              .fl { stroke: currentColor; stroke-width: 1.3; fill: none; marker-end: url(#arrow3); opacity: 0.8; }
+              .flgood { stroke: var(--flow); stroke-width: 1.6; fill: none; marker-end: url(#arrow3); }
+              .flstop { stroke: var(--stop); stroke-width: 1.6; fill: none; marker-end: url(#arrow3); stroke-dasharray: 4 3; }
+            </style>
+
+            <rect x="20" y="150" width="150" height="70" rx="8" class="box"/>
+            <text x="95" y="178" text-anchor="middle" class="lbl">re-run @ SHA</text>
+            <text x="95" y="194" text-anchor="middle" class="sub">flake filter</text>
+
+            <rect x="215" y="150" width="150" height="70" rx="8" class="box"/>
+            <text x="290" y="178" text-anchor="middle" class="lbl">classify.js</text>
+            <text x="290" y="194" text-anchor="middle" class="sub">regex only, no LLM</text>
+
+            <!-- decision -->
+            <polygon points="440,185 490,150 540,185 490,220" class="box"/>
+            <text x="490" y="181" text-anchor="middle" class="sub">LOCATOR</text>
+            <text x="490" y="193" text-anchor="middle" class="sub">_DRIFT?</text>
+
+            <!-- heal path -->
+            <rect x="610" y="40" width="230" height="90" rx="8" class="box" stroke="var(--flow)"/>
+            <text x="725" y="66" text-anchor="middle" class="lbl" fill="var(--flow)">heal job</text>
+            <text x="725" y="83" text-anchor="middle" class="sub">regression-test-healer</text>
+            <text x="725" y="98" text-anchor="middle" class="sub">bounded-run.js (own CSV/state)</text>
+            <text x="725" y="113" text-anchor="middle" class="sub">stop-bias: never edit expect() values</text>
+
+            <!-- review path -->
+            <rect x="610" y="230" width="230" height="70" rx="8" class="box" stroke="var(--stop)"/>
+            <text x="725" y="256" text-anchor="middle" class="lbl" fill="var(--stop)">skipped entirely</text>
+            <text x="725" y="273" text-anchor="middle" class="sub">0 Copilot credits spent</text>
+            <text x="725" y="287" text-anchor="middle" class="sub">full expected-vs-actual kept</text>
+
+            <rect x="890" y="130" width="90" height="100" rx="8" class="box" stroke-width="2"/>
+            <text x="935" y="164" text-anchor="middle" class="lbl">report</text>
+            <text x="935" y="180" text-anchor="middle" class="sub">shared</text>
+            <text x="935" y="194" text-anchor="middle" class="sub">branch</text>
+
+            <line x1="170" y1="185" x2="215" y2="185" class="fl"/>
+            <line x1="365" y1="185" x2="440" y2="185" class="fl"/>
+
+            <path d="M525,168 C 560,120 585,90 610,80" class="flgood"/>
+            <text x="565" y="105" text-anchor="middle" class="sub" fill="var(--flow)">yes</text>
+
+            <path d="M525,202 C 560,250 585,265 610,265" class="flstop"/>
+            <text x="565" y="255" text-anchor="middle" class="sub" fill="var(--stop)">no</text>
+
+            <path d="M840,80 C 870,95 880,110 895,140" class="flgood"/>
+            <path d="M840,265 C 870,250 880,220 895,200" class="flstop"/>
+
+            <rect x="20" y="20" width="345" height="1" opacity="0"/>
+            <text x="192" y="230" text-anchor="middle" class="sub" opacity="0.6">per failing test</text>
+          </svg>
+        </div>
+        <figcaption><strong>What this shows:</strong> the "no" branch never touches the healer node — an <code>ASSERTION_MISMATCH</code> (a real value comparison, exactly the shape a genuine regression takes) has no path in this diagram that reaches Copilot at all. It goes straight into the report with the full expected-vs-actual text, and <code>finalize</code> opens the PR as draft + <code>needs-human</code>.</figcaption>
+      </figure>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <h3><span class="tag flow">LOCATOR_DRIFT</span></h3>
+        <p>Timeout on a selector, an action timeout, or a strict-mode violation — no value comparison present. A structural problem, safe to repair.</p>
+      </div>
+      <div class="card">
+        <h3><span class="tag stop">ASSERTION_MISMATCH</span></h3>
+        <p>An <code>Expected:</code>/<code>Received:</code> pair or a <code>toBe</code>/<code>toEqual</code>/<code>toMatch</code> failure. Exactly the shape a real regression takes — always routed to a human, no exceptions.</p>
+      </div>
+      <div class="card">
+        <h3><span class="tag gate">NEEDS_REVIEW</span></h3>
+        <p>Default-deny. Anything that doesn't cleanly match <code>LOCATOR_DRIFT</code> lands here, never the reverse — a wrong "stop" costs one review; a wrong "proceed" can hide a bug.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <p class="eyebrow">04 — Shared enforcement</p>
+      <h2>Two independent layers under both pipelines</h2>
+      <p class="section-note">Neither layer alone is sufficient — Layer A is what makes the cap durable across separate sessions; Layer B is what stops the agent from routing around it within one session.</p>
+    </div>
+    <div class="wide">
+      <figure>
+        <div class="diagram-scroll">
+          <svg viewBox="0 0 900 170" role="img" aria-label="Layer B, the Copilot CLI tool-permission set, wraps Layer A, the bounded-run.js on-disk attempt counter, which allows up to 3 attempts before writing a dead-letter row and hard-stopping.">
+            <defs>
+              <marker id="arrow4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+              </marker>
+            </defs>
+            <style>
+              text { font-family: 'IBM Plex Mono', ui-monospace, monospace; fill: currentColor; }
+              .lbl { font-size: 12px; }
+              .sub { font-size: 10px; opacity: 0.65; }
+              .box { fill: none; stroke: currentColor; stroke-width: 1.4; }
+            </style>
+            <rect x="20" y="20" width="860" height="130" rx="12" class="box" stroke-dasharray="3 3"/>
+            <text x="45" y="42" class="sub" opacity="0.8">Layer B — allow-tool 'shell' + 'write', deny git write / raw test runner / .env,.auth reads</text>
+
+            <rect x="60" y="65" width="340" height="60" rx="8" class="box"/>
+            <text x="230" y="90" text-anchor="middle" class="lbl">attempt 1, 2, 3</text>
+            <text x="230" y="106" text-anchor="middle" class="sub">.healing-state[-regression]/*.json</text>
+
+            <line x1="400" y1="95" x2="470" y2="95" stroke="currentColor" stroke-width="1.3" marker-end="url(#arrow4)" opacity="0.8"/>
+            <text x="435" y="80" text-anchor="middle" class="sub">exit 1</text>
+
+            <rect x="470" y="65" width="150" height="60" rx="8" class="box" stroke="var(--gate)"/>
+            <text x="545" y="90" text-anchor="middle" class="lbl" fill="var(--gate)">4th attempt</text>
+            <text x="545" y="106" text-anchor="middle" class="sub">still failing?</text>
+
+            <line x1="620" y1="95" x2="690" y2="95" stroke="var(--stop)" stroke-width="1.5" marker-end="url(#arrow4)"/>
+            <text x="655" y="80" text-anchor="middle" class="sub" fill="var(--stop)">exit 2</text>
+
+            <rect x="690" y="65" width="160" height="60" rx="8" class="box" stroke="var(--stop)" stroke-width="2"/>
+            <text x="770" y="90" text-anchor="middle" class="lbl" fill="var(--stop)">hard stop</text>
+            <text x="770" y="106" text-anchor="middle" class="sub">dead-letter CSV row</text>
+          </svg>
+        </div>
+        <figcaption><strong>What this shows:</strong> Layer B is documented as a partial mitigation, not a hard guarantee — Copilot CLI's permission matching is coarser than originally assumed (see <code>docs/ci-setup.md</code>). Layer A's on-disk counter is what actually can't be talked out of stopping at three.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <p class="eyebrow">05 — Reference</p>
+      <h2>Where each piece lives</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Component</th><th>File</th><th>Role</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>The gate</td><td class="mono">.github/workflows/playwright.yml</td><td>Untouched pass/fail authority, every push/PR.</td></tr>
+          <tr><td>Net-new pipeline</td><td class="mono">.github/workflows/manual-test-pipeline.yml</td><td>dedup → generate-and-run → finalize.</td></tr>
+          <tr><td>Regression pipeline</td><td class="mono">.github/workflows/regression-heal.yml</td><td>classify → heal → finalize, dispatch-only.</td></tr>
+          <tr><td>Generator persona</td><td class="mono">.github/agents/playwright-test-generator.agent.md</td><td>Writes new Page Objects/specs, more permissive.</td></tr>
+          <tr><td>Healer persona</td><td class="mono">.github/agents/regression-test-healer.agent.md</td><td>Locator-only fixes, explicit stop-bias.</td></tr>
+          <tr><td>Layer A</td><td class="mono">scripts/bounded-run.js</td><td>Durable 3-attempt cap; <code>--csv-path</code>/<code>--state-dir</code> keep the two pipelines' state separate.</td></tr>
+          <tr><td>Result parser</td><td class="mono">scripts/parse-test-results.js</td><td>Playwright JSON reporter → flat failing-test list.</td></tr>
+          <tr><td>The classifier</td><td class="mono">scripts/classify-regression-failure.js</td><td>Deterministic regex gate — the mechanism in §03.</td></tr>
+          <tr><td>Design record</td><td class="mono">docs/regression-healing-plan.md</td><td>Full rationale + issues found and fixed.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Built on top of the existing <span class="mono">manual-test-pipeline.yml</span> — its hard-won permission and branch-handoff fixes (documented in <span class="mono">docs/ci-setup.md</span>) were reused as-is rather than re-derived for the regression pipeline.
+  </footer>
+
+</div>
