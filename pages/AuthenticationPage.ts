@@ -96,6 +96,11 @@ export class AuthenticationPage extends BasePage {
     return this;
   }
 
+  public async clickLoginLinkFromSignUp(): Promise<this> {
+    await this.page.locator('.loginsignup-switch span:has-text("Login")').click();
+    return this;
+  }
+
   public async getHeadingText(): Promise<string> {
     const authForm = this.page.locator('.loginsignup-container, [data-testid="auth-form"]').first();
     const heading = authForm.getByRole('heading', { level: 1 });

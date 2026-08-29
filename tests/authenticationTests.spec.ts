@@ -125,6 +125,61 @@ test.describe('Authentication', { tag: ['@ui', '@auth'] }, () => {
     }).toContain('/login');
   });
 
+  test('toggles back to Login form from Sign Up form', { tag: '@smoke' }, async ({ open }) => {
+    const authPage = await open(AuthenticationPage)
+      .then((_) => _.ensureSignUpForm());
+
+    await expect.poll(() => authPage.getHeadingText(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Heading should display "Sign Up"',
+    }).toBe('Sign Up');
+
+    await expect.poll(() => authPage.isSignUpFormVisible(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Sign Up form should be visible',
+    }).toBe(true);
+
+    await expect.poll(() => authPage.getAuthToggleParagraphText(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Toggle paragraph should contain "Already have an account? Login"',
+    }).toContain('Already have an account? Login');
+
+    await authPage.clickLoginLinkFromSignUp();
+
+    await expect.poll(() => authPage.getHeadingText(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Heading should change to "Login"',
+    }).toBe('Login');
+
+    await expect.poll(() => authPage.isLoginFormVisible(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Login form should be visible (Email and Password fields)',
+    }).toBe(true);
+
+    await expect.poll(() => authPage.isSignUpFormVisible(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Sign Up form should not be visible',
+    }).toBe(false);
+
+    await expect.poll(() => authPage.getAuthToggleParagraphText(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'Toggle paragraph should change back to "Don\'t have an account? Sign Up"',
+    }).toContain("Don't have an account? Sign Up");
+
+    await expect.poll(() => authPage.getCurrentUrl(), {
+      timeout: 5000,
+      intervals: [250, 500],
+      message: 'URL should remain on /login',
+    }).toContain('/login');
+  });
+
   test('landing page hero Sign Up button navigates to Sign Up form', { tag: '@smoke' }, async ({ page }) => {
     await page.goto('');
     await page.getByRole('button', { name: 'Sign Up' }).waitFor({
