@@ -3,9 +3,10 @@
 #
 # CLI-agnostic dispatcher for the local pipeline-runner scripts
 # (run-manual-test-locally.sh, run-regression-heal-locally.sh). Each backend
-# (copilot.sh, claude-code.sh) implements the same run_agent_task_backend()
-# contract; this file resolves the task descriptor's template once and picks
-# which backend to source based on the requested CLI.
+# (copilot.sh, claude-code.sh, opencode.sh) implements the same
+# run_agent_task_backend() contract; this file resolves the task
+# descriptor's template once and picks which backend to source based on the
+# requested CLI.
 #
 # Usage (from a caller script):
 #   source "$(dirname "${BASH_SOURCE[0]}")/lib/adapters/dispatch.sh"
@@ -13,7 +14,9 @@
 #
 # CLI selection: explicit [cli] arg > $AGENT_CLI env var > "copilot" default
 # — so existing callers that never pass a cli/--cli keep today's behavior
-# (Copilot) unchanged.
+# (Copilot) unchanged. See docs/opencode-adapter.md before picking
+# "opencode" for anything unattended — that backend's flags were not
+# confirmed end-to-end against a live model the way the other two were.
 
 set -euo pipefail
 
@@ -53,8 +56,11 @@ run_agent_task() {
     claude-code)
       source "$ADAPTERS_DIR/claude-code.sh"
       ;;
+    opencode)
+      source "$ADAPTERS_DIR/opencode.sh"
+      ;;
     *)
-      echo "Unknown --cli '$cli' — expected 'copilot' or 'claude-code'." >&2
+      echo "Unknown --cli '$cli' — expected 'copilot', 'claude-code', or 'opencode'." >&2
       rm -f "$resolved_json"
       trap - EXIT
       return 1

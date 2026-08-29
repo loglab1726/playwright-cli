@@ -75,7 +75,7 @@ run_agent_task_backend() {
   model="$(_field "$resolved_json" 't.backends.claudeCode.model')"
   max_budget="$(_field "$resolved_json" 't.backends.claudeCode.maxBudgetUsd')"
 
-  node "$ADAPTERS_DIR/sync-persona.js" "$persona_stem" >/dev/null
+  node "$ADAPTERS_DIR/sync-persona.js" "$persona_stem" "$resolved_json" >/dev/null
 
   local -a args=(-p "$prompt" --agent "$persona_stem" --permission-mode dontAsk --output-format text --no-session-persistence)
   [ -n "$model" ] && args+=(--model "$model")

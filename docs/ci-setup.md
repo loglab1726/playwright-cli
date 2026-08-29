@@ -91,7 +91,14 @@ anywhere else (e.g. commit history, chat logs).
 
 `.env.example` has also been corrected — it previously listed only
 `AMPLIFY_*` variables left over from the removed OpenCode/Amplify adapter,
-none of which the current code reads at all.
+none of which the current code read at all.
+
+**Update 2026-08-24:** an `AMPLIFY_API_TOKEN` entry is back in `.env.example`,
+this time actually read by code — `opencode.json`'s `amplify` provider
+resolves it via `{env:AMPLIFY_API_TOKEN}` for the reintroduced `--cli
+opencode` backend (`scripts/lib/adapters/opencode.sh`). See
+`docs/opencode-adapter.md`; this backend is opt-in and not wired into any
+`.github/workflows/*.yml` production job.
 
 ## 2. `gh` CLI auth for the finalize job
 

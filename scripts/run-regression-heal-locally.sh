@@ -9,13 +9,16 @@
 #
 # Runs the heal step through the CLI-agnostic adapter in
 # scripts/lib/adapters/, so the same task descriptor
-# (scripts/lib/tasks/regression-heal.json) can execute against either the
-# GitHub Copilot CLI (default — matches the production workflow) or the
-# Claude Code CLI. See docs/claude-code-adapter.md for what was verified
-# (not guessed) about the Claude Code backend's agent/permission semantics.
+# (scripts/lib/tasks/regression-heal.json) can execute against the GitHub
+# Copilot CLI (default — matches the production workflow), the Claude Code
+# CLI, or the OpenCode CLI (via the Amplify OpenAI proxy). See
+# docs/claude-code-adapter.md / docs/opencode-adapter.md for what was
+# verified (not guessed) about each backend's agent/permission semantics —
+# the OpenCode backend has NOT been confirmed end-to-end against a live
+# model; don't rely on it unattended yet.
 #
 # Usage:
-#   ./scripts/run-regression-heal-locally.sh [spec-pattern] [--cli copilot|claude-code]
+#   ./scripts/run-regression-heal-locally.sh [spec-pattern] [--cli copilot|claude-code|opencode]
 #
 #     spec-pattern  Optional, forwarded to `npx playwright test <pattern>`
 #                   for the flake-filter re-run — same as the workflow's
@@ -31,15 +34,20 @@
 #   - Copilot backend (default): `copilot` CLI installed and authenticated
 #     (`copilot login`).
 #   - Claude Code backend: `claude` CLI installed and authenticated.
+#   - OpenCode backend: `opencode` CLI installed and `AMPLIFY_API_TOKEN` set
+#     in .env (opencode.sh reads that one var out of .env itself — see
+#     docs/opencode-adapter.md).
 #   - A local .env with BASE_URL/APP_URL/EMAIL_ADDRESS/PASSWORD — loaded
 #     automatically by playwright.config.ts via dotenv.
 #
 # This re-runs the Playwright suite locally, then makes one real, billed
 # agent request per spec classified LOCATOR_DRIFT — same cost profile as the
 # CI job for the Copilot backend (see docs/ci-setup.md, "Free-tier budget");
-# the Claude Code backend has no equivalent validated cost figure yet, so
-# backends.claudeCode.maxBudgetUsd in the task JSON is left unset — tune it
-# before relying on this unattended. It writes/modifies real files in your
+# neither the Claude Code nor the OpenCode backend has an equivalent
+# validated cost figure — backends.claudeCode.maxBudgetUsd in the task JSON
+# is left unset, and the opencode backend has no spend-cap flag at all (see
+# docs/opencode-adapter.md) — tune/watch this before relying on either
+# unattended. It writes/modifies real files in your
 # working tree (Page Object locators) and, via scripts/bounded-run.js, its
 # own unresolved-regression-failures.csv / .healing-state-regression (kept
 # separate from manual-test-pipeline's dead-letter files, same as CI).
@@ -139,9 +147,10 @@ for SPEC_FILE in "${HEALABLE_FILES[@]}"; do
 
   # Task descriptor + tool policy live in scripts/lib/tasks/regression-heal.json
   # and are shared across backends — see scripts/lib/adapters/ (dispatch.sh,
-  # copilot.sh, claude-code.sh) and docs/claude-code-adapter.md for what's
-  # verified per backend. --csv-path/--state-dir (baked into the prompt
-  # template) keep this pipeline's dead-letter state separate from
+  # copilot.sh, claude-code.sh, opencode.sh) and docs/claude-code-adapter.md /
+  # docs/opencode-adapter.md for what's verified per backend.
+  # --csv-path/--state-dir (baked into the prompt template) keep this
+  # pipeline's dead-letter state separate from
   # scripts/run-manual-test-locally.sh's.
   set +e
   run_agent_task "$SCRIPT_DIR/lib/tasks/regression-heal.json" "agent-output-regression-heal-local.log" "$CLI" "SPEC_FILE=$SPEC_FILE"

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "amplify": {
+      "npm": "@ai-sdk/openai",
+      "name": "Amplify OpenAI Proxy",
+      "options": {
+        "baseURL": "https://amplify.planittesting.com/openai",
+        "apiKey": "{env:AMPLIFY_API_TOKEN}"
+      },
+      "models": {
+        "gpt-5.1": {
+          "name": "GPT-5.1",
+          "options": {
+            "reasoningEffort": "low",
+            "textVerbosity": "low"
+          },
+          "limit": { "context": 128000, "input": 128000, "output": 15000 }
+        },
+        "gpt-5.1-codex": {
+          "name": "GPT-5.1 Codex",
+          "options": {
+            "reasoningEffort": "medium"
+          },
+          "limit": { "context": 128000, "input": 128000, "output": 15000 }
+        }
+      }
+    }
+  },
+  "model": "amplify/gpt-5.1-codex"
+}

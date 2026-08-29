@@ -83,8 +83,6 @@ self-counting:
 
 ## Non-goals (don't reintroduce these)
 
-- No OpenCode / Amplify adapter. It was removed from this repo for
-  reliability reasons and should not be reintroduced.
 - No live-browser exploration during initial test generation. Use the
   `.playwright-cli/*.yml` offline snapshots first; only fall back to a live
   `playwright-cli open`/`snapshot` session against the specific failing page
@@ -100,3 +98,11 @@ self-counting:
   equivalent tool-specific file before assuming this file is the complete
   picture — this file intentionally does not duplicate tool-specific
   permission flags or invocation syntax.
+- Claude Code CLI backend specifics: `docs/claude-code-adapter.md`.
+- OpenCode CLI backend specifics (routed through the Amplify OpenAI proxy):
+  `docs/opencode-adapter.md`. An earlier OpenCode/Amplify integration was
+  removed from this repo for reliability reasons before this file existed;
+  it has been reintroduced as a `--cli opencode` option in
+  `scripts/lib/adapters/`, but treat it as less proven than the other two
+  backends until the unverified items in that doc are confirmed against a
+  real `AMPLIFY_API_TOKEN`.

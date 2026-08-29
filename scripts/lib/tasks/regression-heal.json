@@ -11,6 +11,7 @@
   },
   "backends": {
     "copilot": { "model": "auto", "maxCredits": 40 },
-    "claudeCode": { "model": "sonnet", "maxBudgetUsd": null }
+    "claudeCode": { "model": "sonnet", "maxBudgetUsd": null },
+    "opencode": { "model": "amplify/gpt-5.1-codex" }
   }
 }

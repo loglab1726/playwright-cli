@@ -80,7 +80,9 @@ One other option was considered and rejected:
 
 - **GitHub Copilot coding agent** (async, issue-assignment based, opens PRs from its own sandbox): considered, but it's not synchronously scriptable from a workflow step — you can't wrap it in your own retry loop from outside, only nudge it via re-assignment/comments. More complex, less controllable — **rejected in favor of the CLI**.
 
-(An earlier iteration of this repo also had an OpenCode + Amplify adapter harness. It has been removed from the repo and is not part of this plan.)
+(An earlier iteration of this repo also had an OpenCode + Amplify adapter harness. It was removed from the repo and was not part of this plan.
+
+**Update 2026-08-24:** reintroduced as a third `--cli opencode` option alongside Copilot/Claude Code, following the same CLI-agnostic adapter shape `docs/claude-code-adapter.md` already established. See `docs/opencode-adapter.md` for what was actually confirmed by direct testing this time versus what's still unverified — no `AMPLIFY_API_TOKEN` was available while building it, so no live agentic run against a real model was executed. Do not point CI at it until that doc's open items are checked off; the original removal reason ("doesn't work reliably") is exactly the failure mode those open items are guarding against.)
 
 **Chosen: `copilot` CLI**, invoked headlessly and synchronously inside a GitHub Actions job via `-p`/`--prompt` mode. This gives direct control: capture exit code, capture JSON output, enforce tool permissions, cap spend — all from the workflow itself.
 
@@ -323,7 +325,7 @@ Documented honestly so nothing here is silently assumed:
 ## 11. Explicit non-goals / things deliberately rejected in this design
 
 - **Not** using GitHub Copilot's async coding agent (issue-assignment flow) as the primary driver — rejected for lack of synchronous external control (Section 3).
-- **Not** using OpenCode + Amplify adapter — was unreliable, and the corresponding files have been deleted from the repo (Section 3, Section 8).
+- **Not** using OpenCode + Amplify adapter — was unreliable, and the corresponding files had been deleted from the repo (Section 3, Section 8). **Update 2026-08-24:** reintroduced as an optional `--cli opencode` backend, not as the production driver — see the Section 3 update note and `docs/opencode-adapter.md`.
 - **Not** relying on `--allow-all-tools` even though GitHub's own docs suggest it for programmatic use — deliberately using scoped `--allow-tool`/`--deny-tool` instead, because the deny-list is the structural enforcement mechanism this whole design depends on (Section 4).
 - **Not** trusting the agent's self-reported `[HEAL ATTEMPT X/3]` text as the actual cap — that text can remain as a human-readable log line, but it is not what enforces the limit anymore (Section 4).
 - **Not** burning heal attempts on failures that look like real app bugs or stale manual-test expectations rather than locator drift (Section 5).
